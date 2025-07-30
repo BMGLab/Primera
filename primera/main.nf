@@ -27,7 +27,10 @@ log.info """\
 
 
 
-process RUN_NUCMER {
+process RUN_NUCMER {    
+
+    container 'staphb/mummer'
+
     input:
     tuple path(fa1), path(fa2)
         
@@ -64,6 +67,8 @@ process PARSE_COORDS {
 
 process EXTRACT_FILES { 
 
+    conda file("${baseDir}/environment.yml")
+
     input:
     val location_files
     path filePath
@@ -94,6 +99,8 @@ process EXTRACT_FILES {
 }
 
 process RUN_BLAT {
+     
+    conda file("${baseDir}/environment.yml")
 
     input:
     path blinput
@@ -124,17 +131,18 @@ workflow {
             }
             return pairs
         }
-    
+ 
     nucmer_ch = RUN_NUCMER(pairwise_ch) | PARSE_COORDS
    
     extract_ch = EXTRACT_FILES(nucmer_ch, params.filePath)
 
-    chList = extract_ch.collect()    
+    chList = extract_ch.collect() 
     
     merge_ch = MERGE_EXTRACTS(chList)
     
     blat_ch = RUN_BLAT(merge_ch, params.blatdb)
     
-    println "The BLAT results can be found on:"
+    println "The BLAT results can be found on: "
     blat_ch.view()
+ 
 }

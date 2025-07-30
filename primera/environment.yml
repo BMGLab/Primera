@@ -1,0 +1,12 @@
+name: primera-env
+
+channels:
+  - bioconda
+  - conda-forge
+
+dependencies:
+  - python = 3.13.5
+  - bioconda::blat
+  - pip
+  - pip:
+    - biopython
