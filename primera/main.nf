@@ -67,7 +67,6 @@ process PARSE_COORDS {
 
 process EXTRACT_FILES { 
 
-    conda file("${baseDir}/environment.yml")
 
     input:
     val location_files
