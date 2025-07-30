@@ -100,7 +100,7 @@ process EXTRACT_FILES {
 
 process RUN_BLAT {
      
-    conda file("${baseDir}/environment.yml")
+    container 'veupathdb/blat'
 
     input:
     path blinput
