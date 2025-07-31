@@ -1,7 +1,7 @@
 import pandas as pd
 
-psl_file = "/home/musa/Desktop/output.psl"
-output_file = "/home/musa/Desktop/output_grouped.csv"
+psl_file = "/home/user/"
+output_file = "/home/user"
 
 columns = [
     "match", "mis-match", "rep-match", "N's", "Q gap count", "Q gap bases",
