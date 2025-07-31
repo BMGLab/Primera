@@ -3,7 +3,6 @@ params.blatdb = "not defined"
 
                                                                    
 
-
 log.info """\
                               
                                                                                             
