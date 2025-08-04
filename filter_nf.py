@@ -1,4 +1,3 @@
-
 import pandas as pd
 
 def parser(psl_path, chr_list, output_txt):
