@@ -1,9 +1,7 @@
 params.filePath = "not defined"
 params.blatdb = "not defined" 
-
+params.filtered_chrs = "not defined"
                                                                    
-
-
 log.info """\
                               
                                                                                             
@@ -67,6 +65,7 @@ process PARSE_COORDS {
 
 process EXTRACT_FILES { 
 
+    conda file("${baseDir}/environment.yml")
 
     input:
     val location_files
@@ -99,7 +98,7 @@ process EXTRACT_FILES {
 
 process RUN_BLAT {
      
-    container 'veupathdb/blat'
+    conda file("${baseDir}/environment.yml")
 
     input:
     path blinput
@@ -112,6 +111,23 @@ process RUN_BLAT {
     """
     blat $blat_db $blinput output.psl
     """
+}
+
+process FILTER_BLAT {
+
+    input:
+    path pslFile
+    path blat_db
+    path filtered_chrs
+    
+    output:
+    path "*.fa"
+
+    script:
+    """
+    python3 $baseDir/filter.py $pslFile $filtered_chrs $blat_db 
+    """
+
 }
 
 workflow {
@@ -142,6 +158,9 @@ workflow {
     blat_ch = RUN_BLAT(merge_ch, params.blatdb)
     
     println "The BLAT results can be found on: "
-    blat_ch.view()
+
+    filter_ch = FILTER_BLAT(blat_ch,params.blatdb,params.filtered_chrs)
+
+    filter_ch.view()
  
 }
