@@ -1,5 +1,8 @@
 import pandas as pd
 import sys
+import py2bit
+from Bio.Seq import Seq
+
 
 def parse_csv_file(psl_file, allowed_chr_list):
     
@@ -16,6 +19,8 @@ def parse_csv_file(psl_file, allowed_chr_list):
 
     df = df.sort_values("Q name")
 
+    df.to_csv("selam.csv")
+
 
     if "Q name" not in df.columns or "T name" not in df.columns:
         print("error!")
@@ -27,24 +32,38 @@ def parse_csv_file(psl_file, allowed_chr_list):
         
         t_names = set(group_df["T name"].unique())
         
-        if len(t_names) ==1 and len(allowed_chr_list) != 1:
+        if len(t_names) == 1 and len(allowed_chr_list) != 1:
             continue
         
         if t_names == allowed_chr_list:
-            seqList.append(group_name)
-    
+            seqList.append([group_name,
+                            group_df["T name"].values,
+                            group_df["T start"].values,
+                            group_df["T end"].values,
+                            group_df["strand"].values]
+                           )
     return seqList
 
 
 if __name__ == "__main__":
     pslFile = sys.argv[1]
     chr_input = sys.argv[2]
+    twoBit = sys.argv[3]
 
-    allowed_chr = set([c.strip() for c in chr_input.split(",")])
+    tbitFile = py2bit.open(twoBit)
     
+    allowed_chr = set([c.strip() for c in chr_input.split(",")])
+
     filesToParse = set()
     
-    print(parse_csv_file(pslFile, allowed_chr))
-     #   fileName = ''.join(k for k in i.split("_")[:-2])
+    seqList = parse_csv_file(pslFile, allowed_chr)
 
-      #  filesToParse.add(fileName)
+    for i in seqList:
+        with open(f"{i[0]}.fa","w") as f:
+            for k,j in enumerate(i[1]):
+                
+                sequence = Seq(tbitFile.sequence(str(j),int(i[2][k]),int(i[3][k])))
+                if i[4][k] == "-":
+                    sequence = sequence.reverse_complement()
+
+                f.write(f">{j}_{int(i[2][k])}_{int(i[3][k])}\n{sequence}\n")
