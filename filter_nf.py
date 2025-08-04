@@ -15,7 +15,6 @@ def parser(psl_path, chr_list, output_txt):
     with open(output_txt, "w") as out:
         for group_name, group_df in grouped:
             t_names = set(group_df["T name"].unique())
-
             if t_names == (chr_list):
                 out.write(f"{group_name}\n")
 
