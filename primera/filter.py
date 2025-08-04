@@ -1,31 +1,50 @@
 import pandas as pd
+import sys
 
-def parser(psl_path, chr_list):
-    cols = [
-        "match", "mis-match", "rep-match", "N's", "Q gap count", "Q gap bases",
-        "T gap count", "T gap bases", "strand",
-        "Q name", "Q size", "Q start", "Q end",
-        "T name", "T size", "T start", "T end",
-        "block count", "blockSizes", "qStarts", "tStarts"
-    ]
+def parse_csv_file(psl_file, allowed_chr_list):
+    
+    seqList = []
 
-    df = pd.read_csv(psl_path, sep="\t", header = None, names = cols, skiprows=4)
+    columns = [
+    "match", "mis-match", "rep-match", "N's", "Q gap count", "Q gap bases",
+    "T gap count", "T gap bases", "strand",
+    "Q name", "Q size", "Q start", "Q end",
+    "T name", "T size", "T start", "T end",
+    "block count", "blockSizes", "qStarts", "tStarts"]
+    
+    df = pd.read_csv(psl_file, sep='\t', header=None, names=columns, skiprows=4)
+
+    df = df.sort_values("Q name")
+
+
+    if "Q name" not in df.columns or "T name" not in df.columns:
+        print("error!")
+        return
 
     grouped = df.groupby("Q name")
 
-    print("\nRESULTS :", chr_list), "\n"
-
     for group_name, group_df in grouped:
+        
         t_names = set(group_df["T name"].unique())
-        if t_names.issubset(chr_list):
-            print(f"#Group: {group_name}")
-            print(group_df.to_string(index=False))
-            print()
+        
+        if len(t_names) ==1 and len(allowed_chr_list) != 1:
+            continue
+        
+        if t_names == allowed_chr_list:
+            seqList.append(group_name)
+    
+    return seqList
+
 
 if __name__ == "__main__":
-    psl_file = input("Enter PSL file path: ").strip()
-    chr_input = input("Enter chrs: ").strip()
+    pslFile = sys.argv[1]
+    chr_input = sys.argv[2]
 
-    chrs = set(c.strip() for c in chr_input.split(",") if c.strip())
+    allowed_chr = set([c.strip() for c in chr_input.split(",")])
+    
+    filesToParse = set()
+    
+    print(parse_csv_file(pslFile, allowed_chr))
+     #   fileName = ''.join(k for k in i.split("_")[:-2])
 
-    parser(psl_file, chrs)
+      #  filesToParse.add(fileName)
