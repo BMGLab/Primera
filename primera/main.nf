@@ -123,7 +123,7 @@ workflow {
     
     merge_ch = MERGE_EXTRACTS(chList)
     
-    blat_ch = RUN_BLAT(merge_ch, params.blatdb)
+    
     
     println "The BLAT results can be found on: "
     blat_ch.view()
