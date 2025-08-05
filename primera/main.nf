@@ -126,6 +126,6 @@ workflow {
     
     
     println "The BLAT results can be found on: "
-    blat_ch.view()
+    merge_ch.view()
  
 }
