@@ -100,16 +100,19 @@ process EXTRACT_FILES {
 
 
 process RUN_BLAT {
+     
+    conda file("${baseDir}/environment.yml")
 
     input:
     path blinput
+    path blat_db
     
     output:
-    stdout
+    path "output.psl" 
 
     script:
     """
-    echo $blinput
+    blat $blat_db $blinput output.psl
     """
 }
 
@@ -136,11 +139,11 @@ workflow {
 
     chList = extract_ch.collect() 
     
-    merge_ch = MERGE_EXTRACTS(chList) | RUN_BLAT
+    merge_ch = MERGE_EXTRACTS(chList)
     
-    
+    blat_ch = RUN_BLAT(merge_ch, params.blatdb)
     
     println "The BLAT results can be found on: "
-    merge_ch.view()
+    blat_ch.view()
  
 }
