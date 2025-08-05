@@ -15,7 +15,7 @@ process FILTER_BLAT {
     """
 }
 
-process MAKE_PRIMER3_INPUT {
+process PRIMER3_INPUT {
     input:
     path seq
     output:
@@ -41,7 +41,7 @@ workflow {
     filter_ch = FILTER_BLAT(params.pslFile, params.blatdb, params.filtered_chrs)
     filter_ch.view()
 
-    primer3_input_ch = MAKE_PRIMER3_INPUT(filter_ch)
+    primer3_input_ch = PRIMER3_INPUT(filter_ch)
     primer3_input_ch.view()
 
     primer3_ch = PRIMER3(primer3_input_ch)
