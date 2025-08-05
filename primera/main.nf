@@ -98,6 +98,21 @@ process EXTRACT_FILES {
 
 }
 
+
+process RUN_BLAT {
+
+    input:
+    path blinput
+    
+    output:
+    stdout
+
+    script:
+    """
+    echo $blinput
+    """
+}
+
 workflow {
 
     fasta_files_ch = Channel
@@ -121,7 +136,7 @@ workflow {
 
     chList = extract_ch.collect() 
     
-    merge_ch = MERGE_EXTRACTS(chList)
+    merge_ch = MERGE_EXTRACTS(chList) | RUN_BLAT
     
     
     
