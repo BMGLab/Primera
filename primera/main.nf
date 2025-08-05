@@ -112,7 +112,7 @@ process RUN_BLAT {
 
     script:
     """
-    blat $blat_db $blinput output.psl
+    blat $blat_db $blinput -tileSize=20 output.psl
     """
 }
 
