@@ -19,9 +19,6 @@ def parse_csv_file(psl_file, allowed_chr_list):
 
     df = df.sort_values("Q name")
 
-    df.to_csv("selam.csv")
-
-
     if "Q name" not in df.columns or "T name" not in df.columns:
         print("error!")
         return
@@ -60,10 +57,17 @@ if __name__ == "__main__":
 
     for i in seqList:
         with open(f"{i[0]}.fa","w") as f:
-            for k,j in enumerate(i[1]):
-                
-                sequence = Seq(tbitFile.sequence(str(j),int(i[2][k]),int(i[3][k])))
-                if i[4][k] == "-":
-                    sequence = sequence.reverse_complement()
+            with open(f"{i[0]}.fa.reversed","w") as f1:
 
-                f.write(f">{j}_{int(i[2][k])}_{int(i[3][k])}\n{sequence}\n")
+                for k,j in enumerate(i[1]):
+                    
+                    sequence = Seq(tbitFile.sequence(str(j),int(i[2][k]),int(i[3][k])))
+                    
+                    sequence1 = sequence 
+
+                    if i[4][k] == "-":
+                        sequence1 = sequence.reverse_complement()
+                    
+
+                    f.write(f">{j}_{int(i[2][k])}_{int(i[3][k])}\n{sequence}\n")
+                    f1.write(f">{j}_{int(i[2][k])}_{int(i[3][k])}\n{sequence1}\n")
