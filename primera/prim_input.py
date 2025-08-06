@@ -14,4 +14,7 @@ with open(output_file, 'w') as out:
         out.write("PRIMER_TASK=generic\n")
         out.write("PRIMER_PRODUCT_SIZE_RANGE=150-200\n")
         out.write("PRIMER_EXPLORATORY=1\n")
+        out.write("PRIMER_NUM_RETURN=30\n")
         out.write("=\n")
+
+
