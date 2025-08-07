@@ -98,6 +98,23 @@ process EXTRACT_FILES {
 
 }
 
+process RUN_BLAT {
+     
+    conda file("${baseDir}/environment.yml")
+
+    input:
+    path blinput
+    path blat_db
+    
+    output:
+    path "output.psl" 
+
+    script:
+    """
+    blat $blat_db $blinput output.psl
+    """
+}
+
 workflow {
 
     fasta_files_ch = Channel

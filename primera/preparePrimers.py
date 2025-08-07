@@ -25,7 +25,7 @@ def process_files(dir_path):
                     f1.write(f"SEQUENCE_TEMPLATE={seqList[i]}\n")
                     f1.write("PRIMER_OUTPUT_FORMAT=0\n")
                     f1.write("PRIMER_TASK=generic\n")
-                    f1.write("PRIMER_PRODUCT_SIZE_RANGE=120-200\n")
+                    f1.write("PRIMER_PRODUCT_SIZE_RANGE=150-250\n")
                     f1.write("PRIMER_EXPLORATORY=1\n")
                     f1.write("PRIMER_NUM_RETURN=90\n")
                     f1.write("=" + "\n")
