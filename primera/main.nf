@@ -98,7 +98,6 @@ process EXTRACT_FILES {
 
 }
 
-
 process RUN_BLAT {
      
     conda file("${baseDir}/environment.yml")
@@ -112,7 +111,7 @@ process RUN_BLAT {
 
     script:
     """
-    blat $blat_db $blinput -tileSize=20 output.psl
+    blat $blat_db $blinput output.psl
     """
 }
 
