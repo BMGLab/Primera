@@ -1,14 +1,16 @@
-name: primera-env
-
+name: Primera-env
 channels:
   - bioconda
   - conda-forge
-
+  - defaults
 dependencies:
-  - python = 3.13.5
-  - bioconda::blat
-  - bioconda::primer3
-  - bioconda::ispcr
+  - python=3.9
   - pip
+  - primer3
+  - ucsc-ispcr
+  - bedtools
+  - blat
+  - mummer
   - pip:
-    - biopython
+      - pandas
+      - biopython
