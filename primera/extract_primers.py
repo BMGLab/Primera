@@ -34,13 +34,9 @@ def write_primer_pairs(primer_pairs, output_file):
             out.write(f"PRIMER_{idx}\t{forward}\t{reverse}\n")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python3 extract_primers.py <output_file> <input_file1> [input_file2] ...")
-        sys.exit(1)
-
-    output_file = sys.argv[1]
     
+    output_file = sys.argv[1]
     primer_pairs = extract_primer_pairs()
     write_primer_pairs(primer_pairs, output_file)
     
-    print(f"Total {len(primer_pairs)} primer pairs extracted to {output_file}") 
+     
