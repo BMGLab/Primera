@@ -28,7 +28,7 @@ process PREPARE_FOR_PRIMER3{
     path filtered_files_path
 
     output:
-    path "*.txt"
+    path "*_primers"
 
     script:
     """
@@ -39,6 +39,7 @@ process PREPARE_FOR_PRIMER3{
 
 process RUN_PRIMER3 {
 
+
     input:
     path primerinput
     
@@ -47,9 +48,10 @@ process RUN_PRIMER3 {
 
     script:
     """
+
     primer3_core < $primerinput > ${primerinput}.prim
 
-    mkdir -p ${params.outdir}/primer3_output && cp ${primerinput}.prim ${params.outdir}/primer3_output
+    mkdir -p ${params.outdir}/primer3_output && cp  ${primerinput}.prim ${params.outdir}/primer3_output
     """
 
 }
@@ -61,11 +63,11 @@ process MATCH_PRIMERS {
     path primFile
 
     output:
-    path "matched_${primFile}.txt"
+    path "matched_${primFile}"
 
     script:
     """
-    python3 $baseDir/matchPrimers.py $primFile > matched_${primFile}.txt
+    python3 $baseDir/matchPrimers.py $primFile > matched_${primFile}
 
     """
 
@@ -93,13 +95,45 @@ process RUN_ISPCR {
     path blat_db
 
     output:
-    path "output.bed"
+    path "_output.bed"
 
     script:
     """
-    isPcr $blat_db $mergedFile _output.bed -out=bed 
+    isPcr $blat_db $mergedFile _output.bed -out=bed  
+    """
+}
+
+process WRITE_RESULTS {
+
+    input:
+    path primers
+    path bedFile
+    val filteredChrs
+
+    output:
+    path "results.csv"
+
+    script:
+    """
     
-    awk '\$5 == 1000 {count[\$4]++; lines[\$4] = lines[\$4] \$0 ORS}
+    python3 $baseDir/filter_bed.py $bedFile $primers o.bed
+
+    python3 $baseDir/filter_final.py o.bed $filteredChrs output.csv
+    
+    python3 $baseDir/lastFilter.py output.csv
+
+    python3 $baseDir/url.py last.csv results.csv 
+    """
+
+}
+
+
+/*
+
+
+    ""python3 $baseDir/deneme1.py $bedFile $primers > o.bed
+
+awk '\$5 == 1000 {count[\$4]++; lines[\$4] = lines[\$4] \$0 ORS}
     END {
      for (id in count) {
          if (count[id] == 2) {
@@ -107,10 +141,7 @@ process RUN_ISPCR {
          }
      }
     }' _output.bed > output.bed 
-
-    """
-}
-
+*/
 
 workflow{
 
@@ -123,6 +154,8 @@ workflow{
     merge_ch = MERGE_PRIMERS(match_ch)
 
     ispcr_ch = RUN_ISPCR(merge_ch,params.blatdb)
-    ispcr_ch.view()
+
+    results_ch = WRITE_RESULTS(merge_ch,ispcr_ch,params.filtered_chrs)
+    results_ch.view()
 
 }

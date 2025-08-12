@@ -55,9 +55,9 @@ if __name__ == "__main__":
     
     seqList = parse_csv_file(pslFile, allowed_chr)
 
-    for i in seqList:
-        with open(f"{i[0]}.fa","w") as f:
-            with open(f"{i[0]}.fa.reversed","w") as f1:
+    for segid, i in enumerate(seqList):
+        with open(f"seg_{segid}.fa","w") as f:
+            with open(f"seg_{segid}.fa.reversed","w") as f1:
 
                 for k,j in enumerate(i[1]):
                     

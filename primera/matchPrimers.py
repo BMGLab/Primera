@@ -43,6 +43,8 @@ def match_primers(file):
 
 
 data = match_primers(sys.argv[1])
+
+seg_id = sys.argv[1].split(".")[0]
     
 a = 0
 
@@ -60,5 +62,5 @@ for i in data:
                 mapped = False
 
         if mapped:
-            print((f"{i}_{a}\t{fr}\t{rv}\n"))
+            print((f"{seg_id}_{i}_{a}\t{fr}\t{rv}\n"))
             a += 1
