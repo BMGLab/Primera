@@ -43,6 +43,6 @@ with open(output_file, 'w') as out:
     for key in sorted(chroms):
         if key in primer_sequences:
             forward, reverse = primer_sequences[key]
-            out.write(f"{key}\t{','.join(chroms[key])}\t{forward}\t{reverse}\t{"\t".join(locs[key])}\n")
+            out.write(f"{key.split("_")[0]}_{key.split("_")[1]}\t{','.join(chroms[key])}\t{",".join(locs[key])}\t{forward}\t{reverse}\n")
         else:
-            out.write(f"{key}\t{','.join(chroms[key])}\tN/A\t\n")
+            out.write(f"{key}\t{','.join(chroms[key])}\tN/A\n")

@@ -16,17 +16,19 @@ with open(input_file, "r", newline="") as infile, open(output_file, "w", newline
             if row_chr_sorted == target_sorted:
                 for i, j in enumerate(row[1].split(",")):
                     if j in chrDict:
-                        chrDict[j].append(row[i+4])
+                        chrDict[j].append(row[2].split(",")[i])
                     else:
-                        chrDict[j] = [row[i+4]]
+                        chrDict[j] = [row[2].split(",")[i]]
                 
                 newChrs = sorted(row[1].split(","))
                 a = ""
+                b = ""
                 for k in newChrs:
                     for l in chrDict[k]:
                         a += f"{l}\t"
+                        b += f"{l},"
 
                     print(a)
-                outfile.write(f"{row[0]}\t{",".join(newChrs)}\t{row[2]}\t{row[3]}\t{a}\n")
+                outfile.write(f"{row[0]}\t{",".join(newChrs)}\t{b[:-1]}\t{row[3]}\t{row[4]}\t{a}\n")
                 
 

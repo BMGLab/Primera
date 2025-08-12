@@ -16,7 +16,8 @@ def process_files(dir_path):
                     seqList.append(k.replace("\n",""))
             
             namesList = namesList[:-1]
-            new_output = os.path.join(f"{file_name}_primers")
+            fList = file_name.split("_") 
+            new_output = os.path.join(f"{fList[0]}_{fList[1]}_primers")
 
 
             with open(new_output,"w") as f1:

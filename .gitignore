@@ -6,3 +6,5 @@ clustalw_files/
 primer3_output/
 *.txt
 *.prim
+*.csv
+*.bed

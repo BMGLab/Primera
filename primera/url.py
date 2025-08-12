@@ -12,10 +12,9 @@ with open(input_file, "r") as infile:
         parts = line.strip().split("\t")
         if len(parts) < 4:
             continue
-        forward = parts[3]
-        reverse = parts[4]
+        forward = parts[4]
+        reverse = parts[5]
         url = template_url.format(f=forward, r=reverse)
         rows.append(parts + [url])
-
 
 pd.DataFrame(rows).to_csv(output_file, index=False, header=False,sep="\t")

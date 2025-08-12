@@ -16,6 +16,7 @@ def parse_csv_file(psl_file, allowed_chr_list):
     "block count", "blockSizes", "qStarts", "tStarts"]
     
     df = pd.read_csv(psl_file, sep='\t', header=None, names=columns, skiprows=4)
+    df = df[~df["T name"].str.contains("_", na=False)]
 
     df = df.sort_values("Q name")
 
@@ -56,8 +57,9 @@ if __name__ == "__main__":
     seqList = parse_csv_file(pslFile, allowed_chr)
 
     for segid, i in enumerate(seqList):
-        with open(f"seg_{segid}.fa","w") as f:
-            with open(f"seg_{segid}.fa.reversed","w") as f1:
+        print(i)
+        with open(f"seg_{segid}_original.fa","w") as f:
+            with open(f"seg_{segid}_reversed.fa","w") as f1:
 
                 for k,j in enumerate(i[1]):
                     

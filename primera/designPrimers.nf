@@ -11,13 +11,14 @@ process FILTER_BLAT {
     val filtered_chrs
     
     output:
-    path "*.fa"
+    path "*_original.fa", emit: outFile 
+    path "*_reversed.fa", emit: reversed_outFile
 
     script:
     """
     python3 $baseDir/filter.py $pslFile $filtered_chrs $blat_db 
     
-    mkdir -p ${params.outdir}/clustalw_files && cp *.reversed ${params.outdir}/clustalw_files
+    mkdir -p ${params.outdir}/clustalw_files && cp *_reversed.fa ${params.outdir}/clustalw_files
     """
     
 }
@@ -108,6 +109,7 @@ process WRITE_RESULTS {
     input:
     path primers
     path bedFile
+    path reversedFiles
     val filteredChrs
 
     output:
@@ -147,7 +149,7 @@ workflow{
 
     filter_ch = FILTER_BLAT(params.pslFile,params.blatdb,params.filtered_chrs)
 
-    primer_ch = PREPARE_FOR_PRIMER3(filter_ch).flatten() 
+    primer_ch = PREPARE_FOR_PRIMER3(filter_ch[0]).flatten()
     runprimer_ch = RUN_PRIMER3(primer_ch)
 
     match_ch = MATCH_PRIMERS(runprimer_ch).collect()
@@ -155,7 +157,6 @@ workflow{
 
     ispcr_ch = RUN_ISPCR(merge_ch,params.blatdb)
 
-    results_ch = WRITE_RESULTS(merge_ch,ispcr_ch,params.filtered_chrs)
+    results_ch = WRITE_RESULTS(merge_ch,ispcr_ch,filter_ch[1],params.filtered_chrs)
     results_ch.view()
-
 }
