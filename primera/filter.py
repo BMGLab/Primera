@@ -61,8 +61,6 @@ if __name__ == "__main__":
             with open(f"seg_{segid}_reversed.fa","w") as f1:
 
                 for k,j in enumerate(i[1]):
-                    if segid == 2:
-                        print(f">{j}_{int(i[2][k])}_{int(i[3][k])}")
 
                     sequence = Seq(tbitFile.sequence(str(j),int(i[2][k]),int(i[3][k])))
                     
