@@ -129,22 +129,6 @@ process WRITE_RESULTS {
 
 }
 
-
-/*
-
-
-    ""python3 $baseDir/deneme1.py $bedFile $primers > o.bed
-
-awk '\$5 == 1000 {count[\$4]++; lines[\$4] = lines[\$4] \$0 ORS}
-    END {
-     for (id in count) {
-         if (count[id] == 2) {
-             printf "%s", lines[id]
-         }
-     }
-    }' _output.bed > output.bed 
-*/
-
 workflow{
 
     filter_ch = FILTER_BLAT(params.pslFile,params.blatdb,params.filtered_chrs)
