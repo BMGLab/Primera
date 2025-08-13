@@ -28,8 +28,9 @@ log.info """\
 
 
 process RUN_NUCMER {    
-
+    cpus 16
     container 'staphb/mummer'
+
 
     input:
     tuple path(fa1), path(fa2)
@@ -48,6 +49,7 @@ process RUN_NUCMER {
 }
 
 process PARSE_COORDS {
+    cpus 16
     
     input:
     path coordsfile
@@ -66,8 +68,7 @@ process PARSE_COORDS {
 }
 
 process EXTRACT_FILES { 
-
-    conda file("${baseDir}/environment.yml")
+    cpus 16
 
     input:
     val location_files
@@ -84,6 +85,7 @@ process EXTRACT_FILES {
 }
 
  process MERGE_EXTRACTS{
+    cpus 16
 
     input:
     path(bl_files, stageAs: "?/*")
@@ -99,8 +101,8 @@ process EXTRACT_FILES {
 }
 
 process RUN_BLAT {
+    cpus 16
      
-    conda file("${baseDir}/environment.yml")
 
     input:
     path blinput

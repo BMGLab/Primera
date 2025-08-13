@@ -3,8 +3,8 @@ from Bio.Seq import Seq
 
 seq1,seq2 = sys.argv[1].split("/")[-1][:-17].split("+")
 
-fileName1 = seq1 + ".bl"
-fileName2 = seq2 + ".bl"
+fileName1 = seq1_seq2 + ".bl"
+fileName2 = seq2_seq1 + ".bl"
 
 def matchLocations(buff1,buff2):
 
