@@ -16,11 +16,9 @@ def parse_csv_file(psl_file, allowed_chr_list):
     "block count", "blockSizes", "qStarts", "tStarts"]
     
     df = pd.read_csv(psl_file, sep='\t', header=None, names=columns, skiprows=4)
+    df = df[~df["T name"].str.contains("_", na=False)]
 
     df = df.sort_values("Q name")
-
-    df.to_csv("selam.csv")
-
 
     if "Q name" not in df.columns or "T name" not in df.columns:
         print("error!")
@@ -58,12 +56,19 @@ if __name__ == "__main__":
     
     seqList = parse_csv_file(pslFile, allowed_chr)
 
-    for i in seqList:
-        with open(f"{i[0]}.fa","w") as f:
-            for k,j in enumerate(i[1]):
-                
-                sequence = Seq(tbitFile.sequence(str(j),int(i[2][k]),int(i[3][k])))
-                if i[4][k] == "-":
-                    sequence = sequence.reverse_complement()
+    for segid, i in enumerate(seqList):
+        with open(f"seg_{segid}_original.fa","w") as f:
+            with open(f"seg_{segid}_reversed.fa","w") as f1:
 
-                f.write(f">{j}_{int(i[2][k])}_{int(i[3][k])}\n{sequence}\n")
+                for k,j in enumerate(i[1]):
+
+                    sequence = Seq(tbitFile.sequence(str(j),int(i[2][k]),int(i[3][k])))
+                    
+                    sequence1 = sequence 
+
+                    if i[4][k] == "-":
+                        sequence1 = sequence.reverse_complement()
+                    
+
+                    f.write(f">{j}_{int(i[2][k])}_{int(i[3][k])}\n{sequence}\n")
+                    f1.write(f">{j}_{int(i[2][k])}_{int(i[3][k])}\n{sequence1}\n")
