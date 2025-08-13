@@ -113,6 +113,7 @@ process RUN_BLAT {
     """
     blat $blat_db $blinput output.psl
     """
+
 }
 
 workflow {

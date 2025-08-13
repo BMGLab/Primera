@@ -7,6 +7,8 @@ channels:
 dependencies:
   - python = 3.13.5
   - bioconda::blat
+  - bioconda::primer3
+  - bioconda::ispcr
   - pip
   - pip:
     - biopython
