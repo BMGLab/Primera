@@ -57,12 +57,13 @@ if __name__ == "__main__":
     seqList = parse_csv_file(pslFile, allowed_chr)
 
     for segid, i in enumerate(seqList):
-        print(i)
         with open(f"seg_{segid}_original.fa","w") as f:
             with open(f"seg_{segid}_reversed.fa","w") as f1:
 
                 for k,j in enumerate(i[1]):
-                    
+                    if segid == 2:
+                        print(f">{j}_{int(i[2][k])}_{int(i[3][k])}")
+
                     sequence = Seq(tbitFile.sequence(str(j),int(i[2][k]),int(i[3][k])))
                     
                     sequence1 = sequence 

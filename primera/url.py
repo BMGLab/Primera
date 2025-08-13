@@ -12,9 +12,25 @@ with open(input_file, "r") as infile:
         parts = line.strip().split("\t")
         if len(parts) < 4:
             continue
+        with open(f"{parts[1]}_reversed.fa","r") as f:
+            headers = []
+            segs = []
+
+            for line in f:
+
+                if line.startswith(">"):
+
+                    headers.append(line)
+
+                else:
+
+                    segs.append(line)
+
+
+            
         forward = parts[4]
         reverse = parts[5]
         url = template_url.format(f=forward, r=reverse)
-        rows.append(parts + [url])
+        rows.append(parts + [url] + [",".join(headers)] + [",".join(segs)])
 
 pd.DataFrame(rows).to_csv(output_file, index=False, header=False,sep="\t")
