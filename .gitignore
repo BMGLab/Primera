@@ -8,3 +8,4 @@ primer3_output/
 *.prim
 *.csv
 *.bed
+*.dot

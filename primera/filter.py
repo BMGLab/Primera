@@ -59,16 +59,21 @@ if __name__ == "__main__":
     for segid, i in enumerate(seqList):
         with open(f"seg_{segid}_original.fa","w") as f:
             with open(f"seg_{segid}_reversed.fa","w") as f1:
-
+                fDict = {}
+                f1Dict = {}
                 for k,j in enumerate(i[1]):
 
                     sequence = Seq(tbitFile.sequence(str(j),int(i[2][k]),int(i[3][k])))
                     
                     sequence1 = sequence 
-
+                    
                     if i[4][k] == "-":
                         sequence1 = sequence.reverse_complement()
+                   
+                    #TODO: DELETE HERE WHEN WE FIX THE DUPLICATE NAMES STUFF IN THE PSL FILE
+                    if j not in fDict and j not in f1Dict:
+                        fDict[j] = sequence
+                        f1Dict[j] = sequence1
                     
-
                     f.write(f">{j}_{int(i[2][k])}_{int(i[3][k])}\n{sequence}\n")
                     f1.write(f">{j}_{int(i[2][k])}_{int(i[3][k])}\n{sequence1}\n")
