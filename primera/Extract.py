@@ -19,21 +19,23 @@ def matchLocations(buff1,buff2):
                 while data:
                     
                     s1,e1,s2,e2 = data
+
+                    seq = Seq(buff1[int(s1)+1:int(e1)+1])
+
                     if int(s1) - int(e1) > 0:
                         s1,e1 = e1,s1
-                        seq = Seq(buff1[int(s1)+1:int(e1)+1])
                         seq = seq.reverse_complement()
-                        sw1.write(f">{seq1}_{s1}_{e1}\n{seq}\n")
+                        sw1.write(f">{seq1}_{s1}_{e1}_{seq2}_{s2}_{e2}\n{seq}\n")
                     else:
-                        sw1.write(f">{seq1}_{s1}_{e1}\n{buff1[int(s1)+1:int(e1)+1]}\n")
+                        sw1.write(f">{seq1}_{s1}_{e1}_{seq2}_{s2}_{e2}\n{seq}\n")
                     
                     if int(s2) - int(e2) > 0:
                         s2,e2 = e2,s2
                         seq = Seq(buff2[int(s2)+1:int(e2)+1])
                         seq = seq.reverse_complement()
-                        sw2.write(f">{seq2}_{s2}_{e2}\n{seq}\n")
+                        sw2.write(f">{seq2}_{s2}_{e2}_{seq1}_{s1}_{e1}\n{seq}\n")
                     else:
-                        sw2.write(f">{seq2}_{s2}_{e2}\n{buff2[int(s2)+1:int(e2)+1]}\n")
+                        sw2.write(f">{seq2}_{s2}_{e2}_{seq1}_{s1}_{e1}\n{seq}\n")
      
                     data = f.readline().split()
 
