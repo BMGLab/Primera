@@ -29,7 +29,8 @@ log.info """\
 
 process RUN_NUCMER_INTERCHROMOSOMAL {    
 
-    container 'staphb/mummer'
+
+    container 'sadigngr/primera_designtest'
 
     input:
     tuple path(fa1), path(fa2)
@@ -49,7 +50,7 @@ process RUN_NUCMER_INTERCHROMOSOMAL {
 
 process RUN_NUCMER_INTRACHROMOSOMAL {
     
-    container 'staphb/mummer'
+    container 'sadigngr/primera_designtest'
 
     input:
     path fastaFile
@@ -68,6 +69,8 @@ process RUN_NUCMER_INTRACHROMOSOMAL {
 
 process PARSE_COORDS_INTERCHROMOSOMAL {
     
+    container 'sadigngr/primera_designtest'
+
     input:
     path coordsfile
     
@@ -85,6 +88,8 @@ process PARSE_COORDS_INTERCHROMOSOMAL {
 
 process PARSE_COORDS_INTRACHROMOSOMAL {
     
+    container 'sadigngr/primera_designtest'
+
     input:
     path pre_coordsfile
     
@@ -106,7 +111,7 @@ process PARSE_COORDS_INTRACHROMOSOMAL {
 
 process EXTRACT_FILES { 
 
-    conda file("${baseDir}/environment.yml")
+    container 'sadigngr/primera_designtest'
 
     input:
     path location_files
@@ -124,6 +129,9 @@ process EXTRACT_FILES {
 
  process MERGE_EXTRACTS{
 
+
+    container 'sadigngr/primera_designtest'
+
     input:
     path(bl_files, stageAs: "?/*")
     output:
@@ -139,6 +147,8 @@ process EXTRACT_FILES {
 
 process RUN_BLAT {
      
+    container 'sadigngr/primera_designtest'
+
     conda file("${baseDir}/environment.yml")
 
     input:
@@ -175,9 +185,9 @@ workflow {
     nucmer_ch = RUN_NUCMER_INTERCHROMOSOMAL(pairwise_ch)
  
     nucmer_intra_ch = RUN_NUCMER_INTRACHROMOSOMAL(fasta_files_ch)
-
-  
+ 
     parse_ch = PARSE_COORDS_INTERCHROMOSOMAL(nucmer_ch).flatten()
+    
     parse_intra_ch = PARSE_COORDS_INTRACHROMOSOMAL(nucmer_intra_ch).flatten()
     
     parse_merged = parse_ch.mix(parse_intra_ch)
@@ -190,7 +200,7 @@ workflow {
     
     blat_ch = RUN_BLAT(merge_ch, params.blatdb)
     
-    println "The BLAT results can be found on: "
+    println "The BLAT results can be found at: "
     blat_ch.view()
  
 }

@@ -162,16 +162,17 @@ workflow{
     filter_ch = FILTER_BLAT(params.pslFile,params.blatdb,params.filtered_chrs)
 
     primer_ch = PREPARE_FOR_PRIMER3(filter_ch[0]).flatten()
+    
     runprimer_ch = RUN_PRIMER3(primer_ch)
 
     match_ch = MATCH_PRIMERS(runprimer_ch).collect()
 
     merge_ch = PREPARE_FOR_ISPCR(match_ch)
-    merge_ch[0].view()
 
     ispcr_ch = RUN_ISPCR(merge_ch[0].flatten(),params.blatdb).collect()
 
     results_ch = WRITE_RESULTS(merge_ch[1],ispcr_ch,filter_ch[1],params.filtered_chrs)
+    
     results_ch.view()
 }
 
