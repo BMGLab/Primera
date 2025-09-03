@@ -5,9 +5,9 @@ FROM continuumio/miniconda3
 
 RUN conda install conda-lock
 
-COPY conda-lock.yml .
+COPY env-lock-linux64.yml .
 
-RUN conda-lock install --name primera_env conda-lock.yml
+RUN conda-lock install --name primera_env env-lock-linux64.yml
 
 ENV PATH="/opt/conda/envs/primera_env/bin:$PATH"
 
