@@ -19,6 +19,8 @@ def process_files(dir_path):
             fList = file_name.split("_") 
             new_output = os.path.join(f"{fList[0]}_{fList[1]}_primers")
 
+            if namesList == []:
+                continue
 
             with open(new_output,"w") as f1:
                 for i,j in enumerate(namesList):
@@ -31,8 +33,8 @@ def process_files(dir_path):
                     f1.write("PRIMER_NUM_RETURN=90\n")
                     f1.write("=" + "\n")
 
-if __name__ == "__main__":
 
+def main():
     path = sys.argv[1:]
 
     process_files(path)

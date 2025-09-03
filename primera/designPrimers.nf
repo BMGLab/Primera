@@ -5,6 +5,15 @@ params.outdir = workflow.projectDir
 
 process FILTER_BLAT {
 
+    container 'sadigngr/primera_designtest'
+
+    publishDir(
+        
+        path: "${params.outdir}/clustalw_files",
+        mode: "copy",
+        pattern: "*_reversed.fa" 
+                )
+     
     input:
     path pslFile
     path blat_db
@@ -16,14 +25,16 @@ process FILTER_BLAT {
 
     script:
     """
-    python3 $baseDir/filter.py $pslFile $filtered_chrs $blat_db 
     
-    mkdir -p ${params.outdir}/clustalw_files && cp *_reversed.fa ${params.outdir}/clustalw_files
+    primera_filter_psl -p $pslFile -c $filtered_chrs -t $blat_db --soft-filter
+    
     """
     
 }
 
 process PREPARE_FOR_PRIMER3{
+            
+    container 'sadigngr/primera_designtest'
 
     input:
     path filtered_files_path
@@ -33,14 +44,22 @@ process PREPARE_FOR_PRIMER3{
 
     script:
     """
-    python3 $baseDir/preparePrimers.py $filtered_files_path
+    primera_prepare_primers $filtered_files_path
     """
 
 }
 
 process RUN_PRIMER3 {
 
+    container 'sadigngr/primera_designtest'
+    
+     publishDir(
+        
+        path: "${params.outdir}/primer3_output",
+        mode: "copy",
+                )
 
+ 
     input:
     path primerinput
     
@@ -52,13 +71,14 @@ process RUN_PRIMER3 {
 
     primer3_core < $primerinput > ${primerinput}.prim
 
-    mkdir -p ${params.outdir}/primer3_output && cp  ${primerinput}.prim ${params.outdir}/primer3_output
     """
 
 }
 
 
 process MATCH_PRIMERS {
+
+    container 'sadigngr/primera_designtest'
 
     input:
     path primFile
@@ -68,47 +88,58 @@ process MATCH_PRIMERS {
 
     script:
     """
-    python3 $baseDir/matchPrimers.py $primFile > matched_${primFile}
+    primera_match_primers $primFile > matched_${primFile}
 
     """
 
 }
 
-process MERGE_PRIMERS {
+process PREPARE_FOR_ISPCR {
+     
+    container 'sadigngr/primera_designtest'
 
     input:
     path(allPrims)
 
     output:
-    path "merged.txt"
+    path "chunk_*", emit: chunk
+    path "merged.txt", emit: mergedPrimers
 
     script:
     """
     cat ${allPrims.join(' ')} > merged.txt
+
+    split -n l/4 merged.txt chunk_
     """
 
 }
 
 process RUN_ISPCR {
 
+    container 'sadigngr/primera_designtest'
+
     input:
-    path mergedFile
+    path primerFile
     path blat_db
 
     output:
-    path "_output.bed"
+    path "${primerFile}_out.bed"
 
     script:
     """
-    isPcr $blat_db $mergedFile _output.bed -out=bed  
+    isPcr $blat_db $primerFile ${primerFile}_out.bed -out=bed  
     """
 }
 
+
+
 process WRITE_RESULTS {
+
+    container 'sadigngr/primera_designtest'
 
     input:
     path primers
-    path bedFile
+    path bedFiles
     path reversedFiles
     val filteredChrs
 
@@ -118,13 +149,10 @@ process WRITE_RESULTS {
     script:
     """
     
-    python3 $baseDir/filter_bed.py $bedFile $primers o.bed
+    cat ${bedFiles.join(' ')} > out.bed
 
-    python3 $baseDir/filter_final.py o.bed $filteredChrs output.csv
-    
-    python3 $baseDir/lastFilter.py output.csv
+    primera_filter_bed out.bed $primers $filteredChrs $reversedFiles
 
-    python3 $baseDir/url.py last.csv results.csv 
     """
 
 }
@@ -137,10 +165,13 @@ workflow{
     runprimer_ch = RUN_PRIMER3(primer_ch)
 
     match_ch = MATCH_PRIMERS(runprimer_ch).collect()
-    merge_ch = MERGE_PRIMERS(match_ch)
 
-    ispcr_ch = RUN_ISPCR(merge_ch,params.blatdb)
+    merge_ch = PREPARE_FOR_ISPCR(match_ch)
+    merge_ch[0].view()
 
-    results_ch = WRITE_RESULTS(merge_ch,ispcr_ch,filter_ch[1],params.filtered_chrs)
+    ispcr_ch = RUN_ISPCR(merge_ch[0].flatten(),params.blatdb).collect()
+
+    results_ch = WRITE_RESULTS(merge_ch[1],ispcr_ch,filter_ch[1],params.filtered_chrs)
     results_ch.view()
 }
+

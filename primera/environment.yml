@@ -5,10 +5,14 @@ channels:
   - conda-forge
 
 dependencies:
-  - python = 3.13.5
-  - bioconda::blat
+
+  - python == 3.13
+  - bioconda::pblat
+  - bioconda::mummer4
+  - bioconda::clustalw
   - bioconda::primer3
   - bioconda::ispcr
-  - pip
   - pip:
+    - pandas
+    - py2bit
     - biopython

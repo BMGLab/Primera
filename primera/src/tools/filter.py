@@ -2,9 +2,10 @@ import pandas as pd
 import sys
 import py2bit
 from Bio.Seq import Seq
+import argparse
 
 
-def parse_csv_file(psl_file, allowed_chr_list):
+def parse_csv_file(psl_file, allowed_chr_list,hard_filter):
     
     seqList = []
 
@@ -27,8 +28,12 @@ def parse_csv_file(psl_file, allowed_chr_list):
     grouped = df.groupby("Q name")
 
     for group_name, group_df in grouped:
-        
-        t_names = set(group_df["T name"].unique())
+
+        if hard_filter:
+            t_names = list(group_df["T name"])
+            t_names.sort()
+        else:
+            t_names = set(group_df["T name"].unique())
         
         if len(t_names) == 1 and len(allowed_chr_list) != 1:
             continue
@@ -43,37 +48,65 @@ def parse_csv_file(psl_file, allowed_chr_list):
     return seqList
 
 
-if __name__ == "__main__":
-    pslFile = sys.argv[1]
-    chr_input = sys.argv[2]
-    twoBit = sys.argv[3]
+def main():
+    
+    parser = argparse.ArgumentParser(description = "FilterPsl")
+
+    parser.add_argument("-p","--pslFile",
+                        help = "Path to .psl file"
+                        )
+
+    parser.add_argument("-c","--chrs",
+                        help = "Filtered chrs")
+
+    parser.add_argument("-t","--tbitfile",
+                        help = "TwoBit File Path")
+
+    parser.add_argument("--soft-filter",action="store_true",
+                        help = "Use soft filtering, may help getting slightly more results or useful if you want less specifity, but increases filtering time drastically. Read the documentation for more info.")
+    
+    args = parser.parse_args()
+    
+    pslFile = args.pslFile
+    chr_input = args.chrs
+    twoBit = args.tbitfile
+
+    if pslFile == None or chr_input == None or twoBit == None:
+        print("Arguments can't be empty!")
+        exit()
+
+    if args.soft_filter == False:
+        
+        allowed_chr = [c.strip() for c in chr_input.split(",")]
+        allowed_chr.sort()
+
+        hard_filter = True
+
+    else:
+        
+        hard_filter = False
+
+        allowed_chr = set([c.strip() for c in chr_input.split(",")])
+
+
 
     tbitFile = py2bit.open(twoBit)
-    
-    allowed_chr = set([c.strip() for c in chr_input.split(",")])
-
-    filesToParse = set()
-    
-    seqList = parse_csv_file(pslFile, allowed_chr)
+     
+    seqList = parse_csv_file(pslFile, allowed_chr, hard_filter)
 
     for segid, i in enumerate(seqList):
         with open(f"seg_{segid}_original.fa","w") as f:
             with open(f"seg_{segid}_reversed.fa","w") as f1:
-                fDict = {}
-                f1Dict = {}
+
                 for k,j in enumerate(i[1]):
 
                     sequence = Seq(tbitFile.sequence(str(j),int(i[2][k]),int(i[3][k])))
                     
                     sequence1 = sequence 
-                    
+
                     if i[4][k] == "-":
                         sequence1 = sequence.reverse_complement()
-                   
-                    #TODO: DELETE HERE WHEN WE FIX THE DUPLICATE NAMES STUFF IN THE PSL FILE
-                    if j not in fDict and j not in f1Dict:
-                        fDict[j] = sequence
-                        f1Dict[j] = sequence1
                     
+
                     f.write(f">{j}_{int(i[2][k])}_{int(i[3][k])}\n{sequence}\n")
                     f1.write(f">{j}_{int(i[2][k])}_{int(i[3][k])}\n{sequence1}\n")

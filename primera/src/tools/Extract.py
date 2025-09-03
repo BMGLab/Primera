@@ -1,10 +1,10 @@
 import sys
 from Bio.Seq import Seq
 
-seq1,seq2 = sys.argv[1].split("/")[-1][:-17].split("+")
+seq1, seq2 = sys.argv[1].split("/")[-1][:-17].split("+")
 
-fileName1 = seq1 + ".bl"
-fileName2 = seq2 + ".bl"
+fileName1 = seq1[:-2] + "_"  +seq2[:-2] +"_ext_0" + ".fa"
+fileName2 = seq2[:-2] + "_"  +seq1[:-2] +"_ext_1"+ ".fa"
 
 def matchLocations(buff1,buff2):
 
@@ -39,6 +39,7 @@ def matchLocations(buff1,buff2):
      
                     data = f.readline().split()
 
+print(sys.argv[2])
 with open(f"{sys.argv[2]}/{seq1}","r") as f1:
     f1.readline()
 

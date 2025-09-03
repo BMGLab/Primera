@@ -27,7 +27,7 @@ log.info """\
 
 
 
-process RUN_NUCMER {    
+process RUN_NUCMER_INTERCHROMOSOMAL {    
 
     container 'staphb/mummer'
 
@@ -47,15 +47,33 @@ process RUN_NUCMER {
 
 }
 
-process PARSE_COORDS {
+process RUN_NUCMER_INTRACHROMOSOMAL {
+    
+    container 'staphb/mummer'
+
+    input:
+    path fastaFile
+
+    output:
+    path "${fastaFile}+${fastaFile}.coords"
+
+    script:
+    """
+
+    nucmer -c 200 -p $fastaFile+$fastaFile $fastaFile $fastaFile 
+    show-coords ${fastaFile}+${fastaFile}.delta > ${fastaFile}+${fastaFile}.coords
+    """
+
+}
+
+process PARSE_COORDS_INTERCHROMOSOMAL {
     
     input:
     path coordsfile
     
     output:
-    path "${coordsfile}.locations"
-    
-    
+    path "*.locations"
+     
     script:
     """ 
     awk -F'[|]' 'NF > 1 && \$0 !~ /^#/ {split(\$1,a," ");
@@ -65,20 +83,41 @@ process PARSE_COORDS {
     """
 }
 
+process PARSE_COORDS_INTRACHROMOSOMAL {
+    
+    input:
+    path pre_coordsfile
+    
+    output:
+    path "*.locations"
+     
+    script:
+    """ 
+    awk -F'[|]' 'NF > 1 && \$0 !~ /^#/ {split(\$1,a," ");
+    split(\$2,b," "); 
+    S1=a[1]; E1=a[2]; S2=b[1]; 
+    E2=b[2]; print S1, E1, S2, E2}' $pre_coordsfile > ${pre_coordsfile}.pre
+    
+    python3 $baseDir/filter_coords.py ${pre_coordsfile}.pre > ${pre_coordsfile}.locations   
+
+    """
+}
+
+
 process EXTRACT_FILES { 
 
     conda file("${baseDir}/environment.yml")
 
     input:
-    val location_files
+    path location_files
     path filePath
 
     output:
-    path "*.bl" 
+    path "*.fa" 
 
     script:
     """
-    python3 $baseDir/Extract.py $location_files $filePath 
+    python3 $baseDir/Extract.py ${location_files} ${filePath} > error.log 
     """
 
 }
@@ -117,12 +156,12 @@ process RUN_BLAT {
 }
 
 workflow {
-
+    
     fasta_files_ch = Channel
         .fromPath("${params.filePath}/*.fa")
-        .collect()
 
-    pairwise_ch = fasta_files_ch
+    fasta_files_for_pairwise = fasta_files_ch.collect()
+    pairwise_ch = fasta_files_for_pairwise
         .flatMap { files -> 
             def pairs = []
             for (int i = 0; i < files.size(); i++) {
@@ -132,10 +171,18 @@ workflow {
             }
             return pairs
         }
+    
+    nucmer_ch = RUN_NUCMER_INTERCHROMOSOMAL(pairwise_ch)
  
-    nucmer_ch = RUN_NUCMER(pairwise_ch) | PARSE_COORDS
-   
-    extract_ch = EXTRACT_FILES(nucmer_ch, params.filePath)
+    nucmer_intra_ch = RUN_NUCMER_INTRACHROMOSOMAL(fasta_files_ch)
+
+  
+    parse_ch = PARSE_COORDS_INTERCHROMOSOMAL(nucmer_ch).flatten()
+    parse_intra_ch = PARSE_COORDS_INTRACHROMOSOMAL(nucmer_intra_ch).flatten()
+    
+    parse_merged = parse_ch.mix(parse_intra_ch)
+
+    extract_ch = EXTRACT_FILES(parse_merged, params.filePath)
 
     chList = extract_ch.collect() 
     
