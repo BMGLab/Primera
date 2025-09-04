@@ -30,7 +30,7 @@ log.info """\
 process RUN_NUCMER_INTERCHROMOSOMAL {    
 
 
-    container 'sadigngr/primera_designtest'
+    container = params.container
 
     input:
     tuple path(fa1), path(fa2)
@@ -50,7 +50,7 @@ process RUN_NUCMER_INTERCHROMOSOMAL {
 
 process RUN_NUCMER_INTRACHROMOSOMAL {
     
-    container 'sadigngr/primera_designtest'
+    container = params.container
 
     input:
     path fastaFile
@@ -69,7 +69,7 @@ process RUN_NUCMER_INTRACHROMOSOMAL {
 
 process PARSE_COORDS_INTERCHROMOSOMAL {
     
-    container 'sadigngr/primera_designtest'
+    container = params.container
 
     input:
     path coordsfile
@@ -88,7 +88,7 @@ process PARSE_COORDS_INTERCHROMOSOMAL {
 
 process PARSE_COORDS_INTRACHROMOSOMAL {
     
-    container 'sadigngr/primera_designtest'
+    container = params.container
 
     input:
     path pre_coordsfile
@@ -111,7 +111,7 @@ process PARSE_COORDS_INTRACHROMOSOMAL {
 
 process EXTRACT_FILES { 
 
-    container 'sadigngr/primera_designtest'
+    container = params.container
 
     input:
     path location_files
@@ -130,7 +130,7 @@ process EXTRACT_FILES {
  process MERGE_EXTRACTS{
 
 
-    container 'sadigngr/primera_designtest'
+    container = params.container
 
     input:
     path(bl_files, stageAs: "?/*")
@@ -147,7 +147,7 @@ process EXTRACT_FILES {
 
 process RUN_BLAT {
      
-    container 'sadigngr/primera_designtest'
+    container = params.container
 
     conda file("${baseDir}/environment.yml")
 
