@@ -5,7 +5,7 @@ params.outdir = workflow.projectDir
 
 process FILTER_BLAT {
 
-    container 'sadigngr/primera_designtest'
+    container = params.container
 
     publishDir(
         
@@ -34,8 +34,7 @@ process FILTER_BLAT {
 
 process PREPARE_FOR_PRIMER3{
             
-    container 'sadigngr/primera_designtest'
-
+    container = params.container
     input:
     path filtered_files_path
 
@@ -51,9 +50,9 @@ process PREPARE_FOR_PRIMER3{
 
 process RUN_PRIMER3 {
 
-    container 'sadigngr/primera_designtest'
+    container = params.container
     
-     publishDir(
+    publishDir(
         
         path: "${params.outdir}/primer3_output",
         mode: "copy",
@@ -78,8 +77,9 @@ process RUN_PRIMER3 {
 
 process MATCH_PRIMERS {
 
-    container 'sadigngr/primera_designtest'
-
+    
+    container = params.container
+    
     input:
     path primFile
 
@@ -96,8 +96,9 @@ process MATCH_PRIMERS {
 
 process PREPARE_FOR_ISPCR {
      
-    container 'sadigngr/primera_designtest'
-
+    
+    container = params.container
+    
     input:
     path(allPrims)
 
@@ -116,8 +117,9 @@ process PREPARE_FOR_ISPCR {
 
 process RUN_ISPCR {
 
-    container 'sadigngr/primera_designtest'
-
+    
+    container = params.container
+    
     input:
     path primerFile
     path blat_db
@@ -135,8 +137,8 @@ process RUN_ISPCR {
 
 process WRITE_RESULTS {
 
-    container 'sadigngr/primera_designtest'
-
+    container = params.container
+    
     input:
     path primers
     path bedFiles
