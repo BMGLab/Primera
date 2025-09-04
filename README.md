@@ -14,5 +14,5 @@ nextflow run designPrimers.nf \
   --container primera-pipeline:latest \
   --pslFile /path/to/file.psl \
   --blatdb /path/to/hg38.2bit \
-  --filtered_chrs chr13,chr18,chr21,chr2
+  --filtered_chrs <chr_list>
 
