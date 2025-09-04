@@ -1,7 +1,7 @@
 # Primera
 Primera Multi-Target Primer Designing Pipeline
 
-##usage
+## usage
 
 
 nextflow run main.nf \
