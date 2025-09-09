@@ -5,6 +5,7 @@ params.outdir = workflow.projectDir
 
 process FILTER_BLAT {
 
+    container = params.container
 
     publishDir(
         
@@ -33,6 +34,7 @@ process FILTER_BLAT {
 
 process PREPARE_FOR_PRIMER3{
             
+    container = params.container
     input:
     path filtered_files_path
 
@@ -41,13 +43,14 @@ process PREPARE_FOR_PRIMER3{
 
     script:
     """
-    primera_prepare_primers $filtered_files_path 90
+    primera_prepare_primers $filtered_files_path
     """
 
 }
 
 process RUN_PRIMER3 {
 
+    container = params.container
     
     publishDir(
         
@@ -75,6 +78,7 @@ process RUN_PRIMER3 {
 process MATCH_PRIMERS {
 
     
+    container = params.container
     
     input:
     path primFile
@@ -93,6 +97,7 @@ process MATCH_PRIMERS {
 process PREPARE_FOR_ISPCR {
      
     
+    container = params.container
     
     input:
     path(allPrims)
@@ -105,7 +110,7 @@ process PREPARE_FOR_ISPCR {
     """
     cat ${allPrims.join(' ')} > merged.txt
 
-    split -n l/1 merged.txt chunk_
+    split -n l/4 merged.txt chunk_
     """
 
 }
@@ -113,6 +118,7 @@ process PREPARE_FOR_ISPCR {
 process RUN_ISPCR {
 
     
+    container = params.container
     
     input:
     path primerFile
@@ -131,6 +137,7 @@ process RUN_ISPCR {
 
 process WRITE_RESULTS {
 
+    container = params.container
     
     input:
     path primers

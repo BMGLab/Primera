@@ -29,9 +29,6 @@ log.info """\
 
 process RUN_NUCMER_INTERCHROMOSOMAL {    
 
-
-    container = params.container
-
     input:
     tuple path(fa1), path(fa2)
         
@@ -42,7 +39,7 @@ process RUN_NUCMER_INTERCHROMOSOMAL {
     
     script:
     """
-    nucmer -c 200 -p ${fa1}+${fa2} $fa1 $fa2
+    nucmer --maxmatch -l 15 -c 100 -p ${fa1}+${fa2} $fa1 $fa2
     show-coords ${fa1}+${fa2}.delta > ${fa1}+${fa2}.coords
     """
 
@@ -50,7 +47,6 @@ process RUN_NUCMER_INTERCHROMOSOMAL {
 
 process RUN_NUCMER_INTRACHROMOSOMAL {
     
-    container = params.container
 
     input:
     path fastaFile
@@ -61,15 +57,13 @@ process RUN_NUCMER_INTRACHROMOSOMAL {
     script:
     """
 
-    nucmer -c 200 -p $fastaFile+$fastaFile $fastaFile $fastaFile 
+    nucmer -l 15 -c 100 -p $fastaFile+$fastaFile $fastaFile $fastaFile 
     show-coords ${fastaFile}+${fastaFile}.delta > ${fastaFile}+${fastaFile}.coords
     """
 
 }
 
 process PARSE_COORDS_INTERCHROMOSOMAL {
-    
-    container = params.container
 
     input:
     path coordsfile
@@ -88,8 +82,6 @@ process PARSE_COORDS_INTERCHROMOSOMAL {
 
 process PARSE_COORDS_INTRACHROMOSOMAL {
     
-    container = params.container
-
     input:
     path pre_coordsfile
     
@@ -103,7 +95,7 @@ process PARSE_COORDS_INTRACHROMOSOMAL {
     S1=a[1]; E1=a[2]; S2=b[1]; 
     E2=b[2]; print S1, E1, S2, E2}' $pre_coordsfile > ${pre_coordsfile}.pre
     
-    python3 $baseDir/filter_coords.py ${pre_coordsfile}.pre > ${pre_coordsfile}.locations   
+    primera_filter_coords ${pre_coordsfile}.pre > ${pre_coordsfile}.locations 
 
     """
 }
@@ -111,7 +103,6 @@ process PARSE_COORDS_INTRACHROMOSOMAL {
 
 process EXTRACT_FILES { 
 
-    container = params.container
 
     input:
     path location_files
@@ -122,7 +113,7 @@ process EXTRACT_FILES {
 
     script:
     """
-    python3 $baseDir/Extract.py ${location_files} ${filePath} > error.log 
+    primera_extract ${location_files} ${filePath} 
     """
 
 }
@@ -130,7 +121,6 @@ process EXTRACT_FILES {
  process MERGE_EXTRACTS{
 
 
-    container = params.container
 
     input:
     path(bl_files, stageAs: "?/*")
@@ -147,7 +137,6 @@ process EXTRACT_FILES {
 
 process RUN_BLAT {
      
-    container = params.container
 
     conda file("${baseDir}/environment.yml")
 
@@ -160,7 +149,7 @@ process RUN_BLAT {
 
     script:
     """
-    blat $blat_db $blinput output.psl
+    pblat -threads=8 $blat_db $blinput output.psl
     """
 
 }

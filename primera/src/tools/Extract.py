@@ -39,15 +39,15 @@ def matchLocations(buff1,buff2):
      
                     data = f.readline().split()
 
-print(sys.argv[2])
-with open(f"{sys.argv[2]}/{seq1}","r") as f1:
-    f1.readline()
+def main():
+    with open(f"{sys.argv[2]}/{seq1}","r") as f1:
+        f1.readline()
 
-    buff1 = f1.read().replace("\n","")
+        buff1 = f1.read().replace("\n","")
 
-with open(f"{sys.argv[2]}/{seq2}","r") as f2:
-    f2.readline()
-    
-    buff2 = f2.read().replace("\n","")
+    with open(f"{sys.argv[2]}/{seq2}","r") as f2:
+        f2.readline()
+        
+        buff2 = f2.read().replace("\n","")
 
-matchLocations(buff1, buff2)
+    matchLocations(buff1, buff2)

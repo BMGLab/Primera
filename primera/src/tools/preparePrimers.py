@@ -2,8 +2,8 @@ import sys
 import os
 
 def process_files(dir_path):
-    files = [file for file in dir_path]
-
+    files = [file for file in dir_path[:-1]]
+    primerCount = sys.argv[-1]
     for file_name in files:
         with open(file_name,"r") as f:
             seqList = []
@@ -30,7 +30,7 @@ def process_files(dir_path):
                     f1.write("PRIMER_TASK=generic\n")
                     f1.write("PRIMER_PRODUCT_SIZE_RANGE=150-250\n")
                     f1.write("PRIMER_EXPLORATORY=1\n")
-                    f1.write("PRIMER_NUM_RETURN=90\n")
+                    f1.write(f"PRIMER_NUM_RETURN={primerCount}\n")
                     f1.write("=" + "\n")
 
 

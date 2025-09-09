@@ -12,6 +12,7 @@ class Primer_Pair:
 
 def main():
     template_url = "https://genome.ucsc.edu/cgi-bin/hgPcr?hgsid=2900325362_8e48BzUFKDYcxxsPnAlLNmzHKyGA&org=Human&db=hg38&wp_target=genome&wp_f={f}&wp_r={r}&Submit=Submit&wp_size=300&wp_perfect=15&wp_good=15&boolshad.wp_flipReverse=0&wp_append=on&boolshad.wp_append=0"
+
     input_bed = sys.argv[1]
     input_primers = sys.argv[2]
     target_chrs = sys.argv[3]
@@ -70,20 +71,22 @@ def main():
             
             first = df_locs.split(",")[1]
 
+            if 1 < 0 :
+                with open(f"{pair._id}_reversed.fa","r") as f:
+                            headers = ""
+                            segs = ""
 
-            with open(f"{pair._id}_reversed.fa","r") as f:
-                        headers = ""
-                        segs = ""
+                            for line in f:
 
-                        for line in f:
+                                if line.startswith(">"):
 
-                            if line.startswith(">"):
+                                    headers += f",{line}"
 
-                                headers += f",{line}"
+                                else:
 
-                            else:
-
-                                segs += f",{line}"
+                                    segs += f",{line}"
+            else:
+                headers,segs = "N/A","N/A"
 
             url = template_url.format(f=pair.forward, r=pair.reverse)
             headers,segs = headers[1:],segs[1:]

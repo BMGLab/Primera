@@ -12,7 +12,9 @@ setup( name="primera_test",
               'primera_filter_psl=tools.filter:main',
               'primera_prepare_primers=tools.preparePrimers:main',
               'primera_match_primers=tools.matchPrimers:main',
-              'primera_filter_bed=tools.filter_bed:main'
+              'primera_filter_bed=tools.filter_bed:main',
+              'primera_filter_coords=tools.filter_coords:main',
+              'primera_extract=tools.Extract:main'
 
               ]
           }

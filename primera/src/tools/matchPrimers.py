@@ -64,6 +64,6 @@ def main():
                 else:
                     mapped = False
 
-            if mapped:
-                print((f"{seg_id}_{i}_{a}\t{fr}\t{rv}\n"))
+            if True:
+                print((f"{seg_id}_{i}_{a}\t{fr}\t{rv}"))
                 a += 1
