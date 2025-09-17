@@ -5,7 +5,6 @@ params.outdir = workflow.projectDir
 
 process FILTER_BLAT {
 
-
     publishDir(
         
         path: "${params.outdir}/clustalw_files",
@@ -131,7 +130,21 @@ process RUN_ISPCR {
 
 process WRITE_RESULTS {
 
-    
+    def pp_time = new Date().format("yyyy.dd.MM_HH.mm")
+ 
+    publishDir(
+        
+        path: "${params.outdir}/primera_results_${pp_time}",
+        mode: "copy",
+        pattern: "results.tsv" 
+                )
+    publishDir(
+
+        path: "${params.outdir}/primera_results_${pp_time}",
+        mode: "copy",
+        pattern: "results.bed"    
+                )
+
     input:
     path primers
     path bedFiles
@@ -139,14 +152,17 @@ process WRITE_RESULTS {
     val filteredChrs
 
     output:
-    path "results.csv"
+    path "results.tsv"
+    path "results.bed"
 
     script:
     """
     
     cat ${bedFiles.join(' ')} > out.bed
 
-    primera_filter_bed out.bed $primers $filteredChrs $reversedFiles
+    primera_filter_bed --bedFile out.bed --primers $primers --chrs $filteredChrs
+    
+    primera_to_bed results.tsv results.bed
 
     """
 
@@ -167,7 +183,6 @@ workflow{
     ispcr_ch = RUN_ISPCR(merge_ch[0].flatten(),params.blatdb).collect()
 
     results_ch = WRITE_RESULTS(merge_ch[1],ispcr_ch,filter_ch[1],params.filtered_chrs)
-    
-    results_ch.view()
-}
+
+    }
 

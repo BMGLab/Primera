@@ -4,6 +4,7 @@ work/
 chrData/
 clustalw_files/
 primer3_output/
+primera_results*
 *.txt
 *.prim
 *.csv

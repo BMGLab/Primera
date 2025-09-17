@@ -5,8 +5,7 @@ import argparse
 
 @dataclass
 class Primer_Pair:
-    # TODO: This looks sloppy. Change the locEnd stuff and find a way to 
-    # get it to chrs dict as a value, so the start loc and end loc can be a pair.
+    
     _id: str
     forward: str
     reverse: str
@@ -68,19 +67,19 @@ def main():
 
                 if chrom in primer_pairs[key].chrs:
 
-                    primer_pairs[key].chrs[chrom].append((loc,locEnd))
+                    primer_pairs[key].chrs[chrom].append(loc)
 
                 else:
 
-                    primer_pairs[key].chrs[chrom] = [(loc,locEnd)]
+                    primer_pairs[key].chrs[chrom] = [loc]
 
                 primer_pairs[key].chrs_Exact.append(chrom)
 
             else:
-                newPrimerPair = Primer_Pair(id_, forward, reverse, {chrom: [(loc,locEnd)]}, [chrom])
+                newPrimerPair = Primer_Pair(id_, forward, reverse, {chrom: [loc]}, [chrom])
                 primer_pairs[key] = newPrimerPair
 
-    cols = ["id","chrs","locs","locsEnd","first","forward","reverse","url","seg_ids","segs"]
+    cols = ["id","chrs","locs","first","forward","reverse","url","seg_ids","segs"]
     df = pd.DataFrame(columns = cols)
 
 
@@ -91,7 +90,6 @@ def main():
         
         df_chrs = ""
         df_locs = ""
-        df_locs_end = ""
 
         if chrs_sorted == target_sorted:
 
@@ -101,9 +99,7 @@ def main():
 
                     df_chrs += f",{_chr}"
                     
-                    df_locs += f",{_c[0]}"
-
-                    df_locs_end += f",{_c[1]}"
+                    df_locs += f",{_c}"
 
 
             first = df_locs.split(",")[1]
@@ -128,16 +124,16 @@ def main():
           
             url = template_url.format(f=pair.forward, r=pair.reverse)
             headers,segs = headers[1:],segs[1:]
-            df.loc[len(df)] = [pair._id, df_chrs[1:], df_locs[1:], df_locs_end[1:], first ,pair.forward, pair.reverse, url, headers, segs]
+            df.loc[len(df)] = [pair._id, df_chrs[1:], df_locs[1:], first ,pair.forward, pair.reverse, url, headers, segs]
 
     df.sort_values(by="first",inplace=True,ascending=True)
 
     newDfList = []
 
     threshold = 18
-    num = int(df.iloc[0,4]) - 18 - 1
+    num = int(df.iloc[0,3]) - 18 - 1
 
-    for i,j in enumerate(df.iloc[:, 4]):
+    for i,j in enumerate(df.iloc[:,3]):
         j = int(j)
         if j - num >= threshold:
             num = j
