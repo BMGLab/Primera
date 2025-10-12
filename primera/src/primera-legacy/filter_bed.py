@@ -2,17 +2,6 @@ from dataclasses import dataclass
 import pandas as pd
 import argparse
 
-
-@dataclass
-class Primer_Pair:
-    # TODO: This looks sloppy. Change the locEnd stuff and find a way to 
-    # get it to chrs dict as a value, so the start loc and end loc can be a pair.
-    _id: str
-    forward: str
-    reverse: str
-    chrs: dict
-    chrs_Exact: list
-
 def main():
     template_url = "https://genome.ucsc.edu/cgi-bin/hgPcr?hgsid=2900325362_8e48BzUFKDYcxxsPnAlLNmzHKyGA&org=Human&db=hg38&wp_target=genome&wp_f={f}&wp_r={r}&Submit=Submit&wp_size=300&wp_perfect=15&wp_good=15&boolshad.wp_flipReverse=0&wp_append=on&boolshad.wp_append=0"
 

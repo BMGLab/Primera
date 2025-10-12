@@ -17,7 +17,7 @@ def parse_csv_file(psl_file, allowed_chr_list,hard_filter):
     "block count", "blockSizes", "qStarts", "tStarts"]
     
     df = pd.read_csv(psl_file, sep='\t', header=None, names=columns, skiprows=4)
-    df = df[~df["T name"].str.contains("_", na=False)]
+    df = df[~df["T name"].str.contains("chr_", na=False)]
 
     df = df.sort_values("Q name")
 

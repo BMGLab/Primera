@@ -1,6 +1,5 @@
 FROM continuumio/miniconda3 
 
-
 ##### Create Conda Env 
 
 RUN conda install conda-lock
@@ -14,5 +13,5 @@ ENV PATH="/opt/conda/envs/primera_env/bin:$PATH"
 
 #### Add python scripts
 
-COPY ./src/ ./src/
-RUN pip3 install --upgrade pip setuptools && pip3 install /src
+COPY ./src/primera ./src/primera
+RUN pip3 install --upgrade pip setuptools && pip3 install /src/primera

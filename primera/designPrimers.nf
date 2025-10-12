@@ -21,10 +21,11 @@ process FILTER_BLAT {
     path "*_original.fa", emit: outFile 
     path "*_reversed.fa", emit: reversed_outFile
 
+    //TODO : In the script, fill-spaces should be taken from the user.
     script:
     """
     
-    primera_filter_psl -p $pslFile -c $filtered_chrs -t $blat_db --soft-filter
+    primera filter_psl -p $pslFile -c $filtered_chrs -t $blat_db --fill-spaces
     
     """
     
@@ -37,10 +38,11 @@ process PREPARE_FOR_PRIMER3{
 
     output:
     path "*_primers"
-
+    
+    // TODO: min size, max size etc. should be taken from the user.
     script:
     """
-    primera_prepare_primers $filtered_files_path 90
+    primera prepare_primers -f $filtered_files_path --min-size 150 --max-size 450
     """
 
 }
@@ -83,16 +85,14 @@ process MATCH_PRIMERS {
 
     script:
     """
-    primera_match_primers $primFile > matched_${primFile}
+    primera match_primers -f $primFile
 
     """
 
 }
 
 process PREPARE_FOR_ISPCR {
-     
-    
-    
+ 
     input:
     path(allPrims)
 
@@ -159,9 +159,10 @@ process WRITE_RESULTS {
     """
     
     cat ${bedFiles.join(' ')} > out.bed
-
-    primera_filter_bed --bedFile out.bed --primers $primers --chrs $filteredChrs
     
+    primera filter_bed --filter-locations -g $filteredChrs -b out.bed -o to_write.bed 
+    
+    primera write_results -b to_write.bed -m merged.txt -o results.tsv
     primera_to_bed results.tsv results.bed
 
     """
