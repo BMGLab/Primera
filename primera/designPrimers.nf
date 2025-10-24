@@ -2,6 +2,7 @@ params.pslFile = "not defined"
 params.blatdb = "not defined"
 params.filtered_chrs = "not defined"
 params.outdir = workflow.projectDir
+params.gfserver_port = 17779
 
 process FILTER_BLAT {
 
@@ -25,7 +26,7 @@ process FILTER_BLAT {
     script:
     """
     
-    primera filter_psl -p $pslFile -c $filtered_chrs -t $blat_db --fill-spaces
+    primera filter_psl -p $pslFile -g $filtered_chrs -t $blat_db --fill-spaces
     
     """
     
@@ -42,7 +43,7 @@ process PREPARE_FOR_PRIMER3{
     // TODO: min size, max size etc. should be taken from the user.
     script:
     """
-    primera prepare_primers -f $filtered_files_path --min-size 150 --max-size 450
+    primera prepare_primers -f $filtered_files_path
     """
 
 }
@@ -56,7 +57,7 @@ process RUN_PRIMER3 {
         mode: "copy",
                 )
 
- 
+    // TODO : We need to "batch" the files for better performance. 
     input:
     path primerinput
     
@@ -65,8 +66,10 @@ process RUN_PRIMER3 {
 
     script:
     """
+    
+    cat ${primerinput.join(' ')} > merged_primers
 
-    primer3_core < $primerinput > ${primerinput}.prim
+    primer3_core < merged_primers > merged_.prim
 
     """
 
@@ -81,7 +84,7 @@ process MATCH_PRIMERS {
     path primFile
 
     output:
-    path "matched_${primFile}"
+    path "${primFile}.txt"
 
     script:
     """
@@ -92,9 +95,9 @@ process MATCH_PRIMERS {
 }
 
 process PREPARE_FOR_ISPCR {
- 
+    //WARNING : WORK IN PROGRESS 
     input:
-    path(allPrims)
+    path(allPrims, stageAs: "?/*")
 
     output:
     path "chunk_*", emit: chunk
@@ -104,29 +107,28 @@ process PREPARE_FOR_ISPCR {
     """
     cat ${allPrims.join(' ')} > merged.txt
 
-    split -n l/1 merged.txt chunk_
+    split -n l/8 merged.txt chunk_
     """
 
 }
 
 process RUN_ISPCR {
 
-    
+    // WARNING : WORK IN PROGRESS 
     
     input:
     path primerFile
     path blat_db
+    val port
 
     output:
     path "${primerFile}_out.bed"
 
     script:
     """
-    isPcr $blat_db $primerFile ${primerFile}_out.bed -out=bed  
+    gfPcr host.docker.internal $port . $primerFile ${primerFile}_out.bed -out=bed  
     """
 }
-
-
 
 process WRITE_RESULTS {
 
@@ -156,6 +158,7 @@ process WRITE_RESULTS {
     path "results.bed"
 
     script:
+// TODO : primera_to_bed results.tsv results.bed will be added.
     """
     
     cat ${bedFiles.join(' ')} > out.bed
@@ -163,7 +166,6 @@ process WRITE_RESULTS {
     primera filter_bed --filter-locations -g $filteredChrs -b out.bed -o to_write.bed 
     
     primera write_results -b to_write.bed -m merged.txt -o results.tsv
-    primera_to_bed results.tsv results.bed
 
     """
 
@@ -171,19 +173,21 @@ process WRITE_RESULTS {
 
 workflow{
 
-    filter_ch = FILTER_BLAT(params.pslFile,params.blatdb,params.filtered_chrs)
+    filter_ch = FILTER_BLAT(params.pslFile, params.blatdb, params.filtered_chrs)
 
     primer_ch = PREPARE_FOR_PRIMER3(filter_ch[0]).flatten()
     
-    runprimer_ch = RUN_PRIMER3(primer_ch)
+    primer_batches = primer_ch.buffer(size : 10, remainder : true)
+    
+    runprimer_ch = RUN_PRIMER3(primer_batches)
 
     match_ch = MATCH_PRIMERS(runprimer_ch).collect()
 
     merge_ch = PREPARE_FOR_ISPCR(match_ch)
+    
+    ispcr_ch = RUN_ISPCR(merge_ch[0].flatten(), params.blatdb, params.gfserver_port).collect()
 
-    ispcr_ch = RUN_ISPCR(merge_ch[0].flatten(),params.blatdb).collect()
-
-    results_ch = WRITE_RESULTS(merge_ch[1],ispcr_ch,filter_ch[1],params.filtered_chrs)
+    results_ch = WRITE_RESULTS(merge_ch[1], ispcr_ch,filter_ch[1], params.filtered_chrs)
 
     }
 

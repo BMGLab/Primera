@@ -1,10 +1,8 @@
 from dataclasses import dataclass
 from typing import List, Dict
 
-from ..Segments.sequences import FastaRecord, Sequence
-from ..Utils.bedParser import BedRecord
+from ..Segments.sequences import Sequence, FastaRecord
 
-import py2bit
 
 @dataclass
 class Primer:
@@ -16,7 +14,7 @@ class Primer:
     loc_end : int = 0
 
     def __str__(self):
-        return str(self.sequence)
+        return self.sequence
 
 @dataclass
 class PrimerPair:
@@ -24,6 +22,8 @@ class PrimerPair:
     _id : str
     forward : Primer
     reverse : Primer
+    amplicon : Sequence = Sequence("", "")
+    # This will be used for probe design.
     product_size : int = 0
 
 class Primer3Input:
@@ -35,23 +35,22 @@ class Primer3Input:
     @staticmethod
     def calculate_primer_num(sequence_len, min_size):
         
-        return int(int(sequence_len) / int(min_size)) * 2
-
-        #TODO: Test the "coverage" approach.
-    
+        return int(int(sequence_len) / int(min_size)) * 2 + 3
+        # WARNING : This thing is buggy. The approach is not safe, nor elegant. 
     @classmethod
     def from_fasta(cls, fasta_record : FastaRecord, 
-                   primer_count = None, 
-                   min_size = 150, 
-                   max_size = 300):
+                   primer_count,
+                   min_size, 
+                   max_size):
         
         records = []
         
         for sequence in fasta_record.sequences:
             
-            if primer_count is None :
+            if primer_count == 0:
                 primer_count = Primer3Input.calculate_primer_num(len(sequence),
-                                                                 min_size) 
+                                                                 min_size)
+                print(primer_count)
                 # Giving a static number of primers as an argument will override this.
 
             record = {"SEQUENCE_ID" : sequence.id,

@@ -12,7 +12,7 @@ class Df_Like_Record(ABC):
     def as_df(self) -> pd.DataFrame:
 
         return self.df
-    
+
     def __len__(self) -> int:
         return len(self.df.index)
 

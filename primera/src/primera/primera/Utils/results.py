@@ -1,8 +1,6 @@
-from .bedParser import BedRecord
+from ..Records.bedParser import BedRecord
 from ..Primers.primers import PrimerPair, Primer3Output
-from .Record import Df_Like_Record
 
-import py2bit
 import pandas as pd
 
 class Result:

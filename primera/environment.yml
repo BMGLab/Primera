@@ -16,3 +16,4 @@ dependencies:
     - pandas
     - py2bit
     - biopython
+    - pyarrow

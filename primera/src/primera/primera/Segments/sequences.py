@@ -14,7 +14,16 @@ class Sequence:
         return len(self.seq)
 
     def __str__(self):
-        return str(self.seq)
+
+        if self.seq:
+
+            return str(self.seq)
+
+        else:
+
+            raise Exception("The sequence is empty!")
+            # TODO : This will be replaced by a real thing. 
+            
 
 class FastaRecord:
     def __init__(self, sequences: List[Sequence] = None):

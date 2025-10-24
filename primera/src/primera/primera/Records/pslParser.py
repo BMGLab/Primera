@@ -1,9 +1,12 @@
 import pandas as pd
+import pyarrow.csv as pv
 from typing import List
 import py2bit
+import time 
 
 from ..Segments.sequences import Sequence, FastaRecord
 from .Record import Df_Like_Record
+
 
 class PslRecord(Df_Like_Record):
     
@@ -18,18 +21,16 @@ class PslRecord(Df_Like_Record):
 
         # This must not be changed.
         _DEFAULT_COLS = [
-                "match", "mis-match", "rep-match", "N's", "Q gap count", "Q gap bases",
-                "T gap count", "T gap bases", "strand",
-                "Q name", "Q size", "Q start", "Q end",
-                "T name", "T size", "T start", "T end",
-                "block count", "blockSizes", "qStarts", "tStarts"]
-        
+                "Q name", "T name", "T start", "T end", "strand"]
+
         try:
             df = pd.read_csv(filepath, 
                              sep='\t', 
                              header=None, 
                              names=_DEFAULT_COLS, 
-                             skiprows=4) 
+                             skiprows=5,
+                             engine="pyarrow",
+                             )
 
         except FileNotFoundError:
             raise FileNotFoundError(f"PSL file not found at: {filepath}")
@@ -41,53 +42,48 @@ class PslRecord(Df_Like_Record):
         # TODO: This approach is not safe. Find a better way to filter out those things.
         # TODO: Also the static name approach should be reconsidered.
 
-        df = df.sort_values("Q name")
+        #df = df.sort_values("Q name")
         #TODO: I don't know why i sorted the values. Need to check this later.
        
         return cls(df)
 
 
-    def filter_by_target(self, allowed_chr_list: List, hard_filter=False):
-        # WARNING : The filter condition (like chromosomes) MUST be passed as a list. 
-        # Gonna define it in the main function. 
-         
-        _df = pd.DataFrame(columns=self.df.columns.tolist())
-        # TODO: Is this thing used? Maybe we can delete this.
-            
-        chrs_sorted = sorted(allowed_chr_list)
+    def filter_by_target(self, allowed_chr_list: List):
 
-        grouped = self.df.groupby("Q name")
-         
-        filtered_dfList = []
-
-        for _, group_df in grouped:
-
-            if hard_filter:
-                t_names = sorted(list(group_df["T name"]))
-
-                if t_names == chrs_sorted:
-                    filtered_dfList.extend(group_df.index)
-
-            else:
-                t_names = set(group_df["T name"].unique())
-
-                if t_names == set(allowed_chr_list):
-
-                    filtered_dfList.extend(group_df.index)
-                            
-            if len(t_names) == 1 and len(allowed_chr_list) != 1:
-                continue
-        
-        if not filtered_dfList:
+        if self.df.empty:
             return PslRecord(pd.DataFrame(columns=self.df.columns))
+
+        allowed_set = set(allowed_chr_list)
         
-        return PslRecord(self.df.loc[filtered_dfList].copy())
+        # Find all Q names that contain at least one T name not in the allowed list.
+        invalid_q_names = self.df[~self.df['T name'].isin(allowed_set)]['Q name'].unique()
+        
+        # Filter the DataFrame to keep only Q names that do not have any invalid T names.
+        candidates = self.df[~self.df['Q name'].isin(invalid_q_names)]
+        
+        # Among the candidates, find the Q names that have the correct number of unique T names.
+        # This ensures that they have all the T names from the allowed list.
+        if not candidates.empty:
+            q_name_counts = candidates.groupby('Q name')['T name'].nunique()
+            valid_q_names = q_name_counts[q_name_counts == len(allowed_set)].index
+        else:
+            valid_q_names = []
+
+        # Filter the original DataFrame to get the final result.
+        result_df = self.df[self.df['Q name'].isin(valid_q_names)]
+        
+        if result_df.empty:
+            return PslRecord(pd.DataFrame(columns=self.df.columns))
+            
+        return PslRecord(result_df.copy())
        
     def fill_spaces(self, 
-                threshold=400,
+                threshold,
                 namesCol = "T name", 
                 startCol="T start", 
                 endCol = "T end"):
+
+        a = time.time()
 
 
         #TODO: This approach possibly creates duplicate segments. Need to check if it does and fix it.
@@ -125,7 +121,7 @@ class PslRecord(Df_Like_Record):
                 if cur_start is None:
                     cur_start, cur_end = start, end
  
-                elif start - cur_end <= threshold:
+                elif start - cur_end<= int(threshold):
 
                     idxList.append(idx)
                     cur_end = max(cur_end, end)
@@ -145,7 +141,9 @@ class PslRecord(Df_Like_Record):
                     self.df.loc[idx, "T start"] = start
                     self.df.loc[idx, "T end"] = end
         
+        b = time.time()
 
+        print(f"islem {b - a} saniye surdu.")
         return self
  
     def extract_groups(self, two_bit_filepath, reverse_complement: bool):
