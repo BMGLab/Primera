@@ -25,13 +25,13 @@ def filter_psl(psl, genomes, tbitFile, threshold, fillspaces = False):
     segments_reversed = filtered_record.extract_groups(tbitFile, reverse_complement=True)
     
 
-    for idx,seg in enumerate(segments):
+    for seg in segments:
 
-        seg.to_file(f"seg_{idx}_original.fa")
+        seg.to_file(f"{seg.name}_original.fa")
 
-    for idx, seg_r in enumerate(segments_reversed):
+    for seg_r in segments_reversed:
 
-        seg_r.to_file(f"seg_{idx}_reversed.fa")
+        seg_r.to_file(f"{seg_r.name}_reversed.fa")
 
 
 def filter_bed(bed, genomes, outfile, threshold, filterlocation=True):
@@ -51,8 +51,10 @@ def prepare_primers(segmentFiles, minSize, maxSize, primerCount):
     for seg in segmentFiles:
         
         record = FastaRecord.from_file(seg)
-
-        newInput = Primer3Input.from_fasta(record, primerCount, minSize, maxSize)
+        newInput = Primer3Input.from_fasta(record, 
+                                           primerCount, 
+                                           minSize, 
+                                           maxSize)
 
         newInput.to_file(f"{seg}_primers")
 

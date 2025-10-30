@@ -1,8 +1,14 @@
 params.pslFile = "not defined"
 params.blatdb = "not defined"
 params.filtered_chrs = "not defined"
+
 params.outdir = workflow.projectDir
 params.gfserver_port = 17779
+// WARNING: The static port thing will only work for a while. 
+
+params.fill_spaces = false
+params.threshold = 18
+
 
 process FILTER_BLAT {
 
@@ -43,7 +49,7 @@ process PREPARE_FOR_PRIMER3{
     // TODO: min size, max size etc. should be taken from the user.
     script:
     """
-    primera prepare_primers -f $filtered_files_path
+    primera prepare_primers -f $filtered_files_path --min-size 200 --max-size 500
     """
 
 }
@@ -128,6 +134,7 @@ process RUN_ISPCR {
     """
     gfPcr host.docker.internal $port . $primerFile ${primerFile}_out.bed -out=bed  
     """
+    //WARNING : Using host.docker.internal is probably unsafe. This works for now but definitely needs to be checked.
 }
 
 process WRITE_RESULTS {
@@ -167,6 +174,8 @@ process WRITE_RESULTS {
     
     primera write_results -b to_write.bed -m merged.txt -o results.tsv
 
+    primera to_bed -f results.tsv -o results.bed
+
     """
 
 }
@@ -177,7 +186,7 @@ workflow{
 
     primer_ch = PREPARE_FOR_PRIMER3(filter_ch[0]).flatten()
     
-    primer_batches = primer_ch.buffer(size : 10, remainder : true)
+    primer_batches = primer_ch.buffer(size : 100, remainder : true)
     
     runprimer_ch = RUN_PRIMER3(primer_batches)
 
@@ -187,7 +196,7 @@ workflow{
     
     ispcr_ch = RUN_ISPCR(merge_ch[0].flatten(), params.blatdb, params.gfserver_port).collect()
 
-    results_ch = WRITE_RESULTS(merge_ch[1], ispcr_ch,filter_ch[1], params.filtered_chrs)
+    results_ch = WRITE_RESULTS(merge_ch[1], ispcr_ch, filter_ch[1], params.filtered_chrs)
 
     }
 

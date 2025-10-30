@@ -1,8 +1,7 @@
 import pandas as pd
-import pyarrow.csv as pv
 from typing import List
 import py2bit
-import time 
+import warnings
 
 from ..Segments.sequences import Sequence, FastaRecord
 from .Record import Df_Like_Record
@@ -83,7 +82,6 @@ class PslRecord(Df_Like_Record):
                 startCol="T start", 
                 endCol = "T end"):
 
-        a = time.time()
 
 
         #TODO: This approach possibly creates duplicate segments. Need to check if it does and fix it.
@@ -141,18 +139,21 @@ class PslRecord(Df_Like_Record):
                     self.df.loc[idx, "T start"] = start
                     self.df.loc[idx, "T end"] = end
         
-        b = time.time()
-
-        print(f"islem {b - a} saniye surdu.")
         return self
  
     def extract_groups(self, two_bit_filepath, reverse_complement: bool):
+        
         """
         Extracts DNA sequences for each record, oriented according to the strand,
-        and returns them as a single FastaRecord object.
+        AND returns them as a single FastaRecord object.
         """
 
         #TODO: Splitting the grouping part and the actual FastaRecord generation part may be helpful in the future.
+        
+        # WARNING : This function is written as if the PslRecord object will never 
+        # change dynamically along the runtime of it. If the object is changed somehow while 
+        # this is running, serious bugs can occur.
+
         fastaRecords = []
 
         try:
@@ -161,22 +162,25 @@ class PslRecord(Df_Like_Record):
         except FileNotFoundError:
             raise FileNotFoundError(f"2bit file not found at: {two_bit_filepath}")
 
+        seg_count = 0
 
         for _, groupdf in self.df.groupby("Q name"):
-
-            fasta_record = FastaRecord()
+            
+            _name = f"seg_{seg_count}"
+            fasta_record = FastaRecord(name=_name)
 
             for _, row in groupdf.iterrows():
                 try:
-                    name = row["T name"]
+
                     start = int(row["T start"])
                     end = int(row["T end"])
 
+                    name = f"seg_{seg_count}-{row["T name"]}-{start}-{end}"
                     sequence_str = self.tbitFile.sequence(str(row["T name"]), 
                                                      start, 
                                                      end)
 
-                    seq_id = f"{name}-{start}-{end}"
+                    seq_id = f"{name}"
                     # TODO : Check "-" character's effect.
 
                     seq = Sequence(seq_id, sequence_str)
@@ -190,7 +194,10 @@ class PslRecord(Df_Like_Record):
                         fasta_record.add_sequence(seq)
                     
                 except Exception as e:
-                    print(f"Warning: Could not process record {row['Q name']}: {e}")
+                    warnings.warn(f"Warning: Could not process record {row['Q name']}: {e}")
+
+            seg_count += 1
              
             fastaRecords.append(fasta_record)
+
         return fastaRecords

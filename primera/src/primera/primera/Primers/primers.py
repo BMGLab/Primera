@@ -50,14 +50,13 @@ class Primer3Input:
             if primer_count == 0:
                 primer_count = Primer3Input.calculate_primer_num(len(sequence),
                                                                  min_size)
-                print(primer_count)
                 # Giving a static number of primers as an argument will override this.
 
             record = {"SEQUENCE_ID" : sequence.id,
                       "SEQUENCE_TEMPLATE" : str(sequence.seq),
                       "PRIMER_PRODUCT_SIZE_RANGE" : f"{min_size}-{max_size}",
                       "PRIMER_NUM_RETURN" : primer_count}
-
+            
             records.append(record)
 
         return cls(records)

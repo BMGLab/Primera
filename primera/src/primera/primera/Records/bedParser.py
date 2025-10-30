@@ -30,7 +30,9 @@ class BedRecord(Df_Like_Record):
         return cls(df)
 
     def filter_by_target(self, allowed_chr_list):
-        
+
+        # WARNING/TODO : The filtering is not %100 reliable. Sometimes gives duplicate results etc. Check it.
+
         _dfList = []
         allowed_chrs_sorted = sorted(allowed_chr_list)
         
@@ -40,13 +42,12 @@ class BedRecord(Df_Like_Record):
         
             chrs = sorted(list(group_df["chr"]))
             if chrs == allowed_chrs_sorted:
-
                 _dfList.extend(group_df.index)
 
         if not _dfList:
 
             return BedRecord(pd.DataFrame(columns = self.df.columns))
-
+        
         return BedRecord(self.df.loc[_dfList].copy())
 
     def filter_by_location(self, threshold = 18):
