@@ -1,0 +1,16 @@
+:root {
+  --primary-color: #0ea5e9; 
+  --secondary-color: #0f172a; 
+  --accent-color: #10b981;    
+  --bg-color: #f8fafc;        
+  --card-bg: #ffffff;
+  --text-main: #334155;
+  --border-radius: 8px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+}

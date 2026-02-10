@@ -1,0 +1,20 @@
+name: primera-env
+
+channels:
+  - bioconda
+  - conda-forge
+
+dependencies:
+
+  - python == 3.13
+  - bioconda::pblat
+  - bioconda::mummer4
+  - bioconda::clustalw
+  - bioconda::primer3
+  - bioconda::ispcr
+  - pip:
+    - pandas
+    - py2bit
+    - biopython
+    - pyfaidx
+    - primer3-py

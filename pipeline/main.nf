@@ -1,0 +1,195 @@
+params.filePath = "not defined"
+params.blatdb = "not defined" 
+
+                                                                   
+
+
+log.info """\
+                              
+                                                                                            
+        ▀███▀▀▀██▄▀███▀▀▀██▄ ▀████▀████▄     ▄███▀███▀▀▀███▀███▀▀▀██▄       ██      
+          ██   ▀██▄ ██   ▀██▄  ██   ████    ████   ██    ▀█  ██   ▀██▄     ▄██▄     
+          ██   ▄██  ██   ▄██   ██   █ ██   ▄█ ██   ██   █    ██   ▄██     ▄█▀██▄    
+          ███████   ███████    ██   █  ██  █▀ ██   ██████    ███████     ▄█  ▀██    
+          ██        ██  ██▄    ██   █  ██▄█▀  ██   ██   █  ▄ ██  ██▄     ████████   
+          ██        ██   ▀██▄  ██   █  ▀██▀   ██   ██     ▄█ ██   ▀██▄  █▀      ██  
+        ▄████▄    ▄████▄ ▄███▄████▄███▄ ▀▀  ▄████▄██████████████▄ ▄███▄███▄   ▄████▄
+                                                                                                                      
+                                       	
+		Chromosome Data Provided On : 
+                    
+                    $params.filePath
+
+                BLAT Database Provided On : 
+                        
+                    $params.blatdb
+"""
+
+
+
+process RUN_NUCMER_INTERCHROMOSOMAL {    
+
+    cpus 24
+    input:
+    tuple path(fa1), path(fa2)
+        
+    
+    output:
+    path "${fa1}+${fa2}.coords"
+
+    
+    
+    script:
+    def prefix = "${fa1}+${fa2}"
+   
+    """
+    nucmer --maxmatch -l 18 -c 30 --maxgap 500 --threads ${task.cpus} -p '${prefix}' '${fa1}' '${fa2}'
+    delta-filter -i 0 -l 100 '${prefix}.delta' > '${prefix}.filtered.delta'
+    show-coords -T -r -c -l '${prefix}.filtered.delta' > '${prefix}.raw.coords'
+    awk '\$5 <= 500' '${prefix}.raw.coords' > '${prefix}.coords'
+    """
+
+}
+
+process RUN_NUCMER_INTRACHROMOSOMAL {
+    
+    cpus 24
+    input:
+    path fastaFile
+
+    output:
+    path "${fastaFile.getName()}.coords"
+
+    script:
+    def prefix = fastaFile.getName()
+    """
+    nucmer --maxmatch -l 100 -c 100 --threads ${task.cpus} -p '${prefix}' '${fastaFile}' '${fastaFile}' 
+    delta-filter -m -i 95 -l 100 '${prefix}.delta' > '${prefix}.filtered.delta'
+    show-coords -T -r -c -l '${prefix}.filtered.delta' > '${prefix}.coords'
+    """
+
+}
+
+process PARSE_COORDS_INTERCHROMOSOMAL {
+
+    cpus 2
+    input:
+    path coordsfile
+    
+    output:
+    path "${coordsfile.getBaseName()}.locations"
+     
+    script:
+    """ 
+    awk 'NR > 5 {print \$1, \$2, \$3, \$4}' $coordsfile > ${coordsfile.getBaseName()}.locations
+    """
+}
+
+process PARSE_COORDS_INTRACHROMOSOMAL {
+    
+    cpus 2
+    input:
+    path pre_coordsfile
+    
+    output:
+    path "${pre_coordsfile.getBaseName()}.locations"
+     
+    script:
+    """ 
+    awk 'NR > 5 && \$1 != \$3 && \$2 != \$4 {print \$1, \$2, \$3, \$4}' $pre_coordsfile > ${pre_coordsfile.getBaseName()}.locations
+    """
+}
+
+
+process EXTRACT_FILES { 
+
+    cpus 24
+    input:
+    path location_files
+    path filePath
+
+    output:
+    path "*.fa" 
+
+    script:
+    """
+    primera_extract ${location_files} ${filePath} 
+    """
+
+}
+
+ process MERGE_EXTRACTS{
+
+
+    cpus 24
+    input:
+    path(bl_files, stageAs: "?/*")
+    output:
+    path "bl_input.fa"
+
+    script:
+    """
+     cat ${bl_files.join(' ')} > bl_input.fa
+    
+    """
+
+}
+
+process RUN_BLAT {
+     
+    cpus 24
+    conda file("${baseDir}/environment.yml")
+
+    input:
+    path blinput
+    path blat_db
+    
+    output:
+    path "output.psl" 
+
+    script:
+    """
+    pblat -threads=${task.cpus} $blat_db $blinput output.psl
+    """
+
+}
+
+workflow {
+    
+    fasta_files_ch = Channel
+        .fromPath("${params.filePath}/*.fa.masked")
+
+    fasta_files_for_pairwise = fasta_files_ch.collect()
+    pairwise_ch = fasta_files_for_pairwise
+        .flatMap { files -> 
+            def pairs = []
+            for (int i = 0; i < files.size(); i++) {
+                for (int j = i+1; j < files.size(); j++) {
+                    pairs << [files[i], files[j]]
+                }
+            }
+            return pairs
+        }
+    
+    nucmer_ch = RUN_NUCMER_INTERCHROMOSOMAL(pairwise_ch)
+ 
+    nucmer_intra_ch = RUN_NUCMER_INTRACHROMOSOMAL(fasta_files_ch)
+ 
+    parse_ch = PARSE_COORDS_INTERCHROMOSOMAL(nucmer_ch).flatten()
+    
+    parse_intra_ch = PARSE_COORDS_INTRACHROMOSOMAL(nucmer_intra_ch).flatten()
+    
+    parse_merged = parse_ch.mix(parse_intra_ch)
+
+    extract_ch = EXTRACT_FILES(parse_merged, params.filePath)
+
+    chList = extract_ch.collect() 
+    
+    merge_ch = MERGE_EXTRACTS(chList)
+    
+    blat_ch = RUN_BLAT(merge_ch, params.blatdb)
+    
+    println "The BLAT results can be found at: "
+    blat_ch.view()
+ 
+}
