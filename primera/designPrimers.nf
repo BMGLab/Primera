@@ -49,7 +49,7 @@ process PREPARE_FOR_PRIMER3{
     // TODO: min size, max size etc. should be taken from the user.
     script:
     """
-    primera prepare_primers -f $filtered_files_path --min-size 200 --max-size 500
+    primera prepare_primers -f $filtered_files_path --min-size 100 --max-size 300
     """
 
 }
@@ -147,11 +147,16 @@ process WRITE_RESULTS {
         mode: "copy",
         pattern: "results.tsv" 
                 )
-    publishDir(
+     publishDir(
 
         path: "${params.outdir}/primera_results_${pp_time}",
         mode: "copy",
-        pattern: "results.bed"    
+        pattern: "amplicons.bed"    
+                )   publishDir(
+
+        path: "${params.outdir}/primera_results_${pp_time}",
+        mode: "copy",
+        pattern: "segments.bed"    
                 )
 
     input:
@@ -162,19 +167,25 @@ process WRITE_RESULTS {
 
     output:
     path "results.tsv"
-    path "results.bed"
+    path "amplicons.bed"
+    path "segments.bed"
 
     script:
 // TODO : primera_to_bed results.tsv results.bed will be added.
+
+//primera filter_bed --filter-locations -g $filteredChrs -b out.bed -o to_write.bed 
     """
     
     cat ${bedFiles.join(' ')} > out.bed
     
-    primera filter_bed --filter-locations -g $filteredChrs -b out.bed -o to_write.bed 
     
+    primera filter_bed -g $filteredChrs -b out.bed -o to_write.bed --filter-locations -t 3 
+
     primera write_results -b to_write.bed -m merged.txt -o results.tsv
 
-    primera to_bed -f results.tsv -o results.bed
+    primera amp_to_bed -f results.tsv -o amplicons.bed
+
+    primera seg_to_bed -f results.tsv -o segments.bed
 
     """
 

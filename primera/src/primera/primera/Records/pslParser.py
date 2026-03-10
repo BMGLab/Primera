@@ -45,9 +45,22 @@ class PslRecord(Df_Like_Record):
         #TODO: I don't know why i sorted the values. Need to check this later.
        
         return cls(df)
+    
+    @staticmethod
+    def filter_duplicates(result_df):
+        def get_group_signature(group):
+            # Create a canonical representation of the group
+            group_signature_df = group[['T name', 'T start', 'T end', 'strand']].sort_values(by=['T name', 'T start', 'T end', 'strand'])
+            return tuple(map(tuple, group_signature_df.to_numpy()))
+        
+        signatures = result_df.groupby('Q name').apply(get_group_signature)
+
+        unique_q_names = signatures.drop_duplicates(keep="first").index
+        
+        return result_df[result_df['Q name'].isin(unique_q_names)]
 
 
-    def filter_by_target(self, allowed_chr_list: List):
+    def filter_by_target(self, allowed_chr_list: List, filter_segments=False):
 
         if self.df.empty:
             return PslRecord(pd.DataFrame(columns=self.df.columns))
@@ -73,14 +86,18 @@ class PslRecord(Df_Like_Record):
         
         if result_df.empty:
             return PslRecord(pd.DataFrame(columns=self.df.columns))
-            
+
+        if filter_segments: 
+            result_df = PslRecord.filter_duplicates(result_df)
+
         return PslRecord(result_df.copy())
        
     def fill_spaces(self, 
                 threshold,
                 namesCol = "T name", 
                 startCol="T start", 
-                endCol = "T end"):
+                endCol = "T end",
+                filter_segments=False):
 
 
 
@@ -119,7 +136,7 @@ class PslRecord(Df_Like_Record):
                 if cur_start is None:
                     cur_start, cur_end = start, end
  
-                elif start - cur_end<= int(threshold):
+                elif start - cur_end <= int(threshold):
 
                     idxList.append(idx)
                     cur_end = max(cur_end, end)
@@ -138,7 +155,10 @@ class PslRecord(Df_Like_Record):
                 for idx in idxList:
                     self.df.loc[idx, "T start"] = start
                     self.df.loc[idx, "T end"] = end
-        
+       
+        if filter_segments:
+            self.df = PslRecord.filter_duplicates(self.df)
+
         return self
  
     def extract_groups(self, two_bit_filepath, reverse_complement: bool):

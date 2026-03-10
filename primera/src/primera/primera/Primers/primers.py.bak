@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Dict
 import py2bit
 
@@ -23,12 +23,14 @@ class PrimerPair:
     forward : Primer
     reverse : Primer
     amplicon : Sequence = Sequence("", "")
+    product_size : int = 0
 
 @dataclass
 class ProbeGroup:
 
-    probes : list
-    seq : str
+    f_probes : list = field(default_factory=list)
+    r_probes : list = field(default_factory=list)
+    seq : str = ""
 
 class Primer3ProbeInput:
 
@@ -100,113 +102,53 @@ class Primer3ProbeInput:
                 for key,value in record.items():
                     f.write(f"{key}={value}\n")
                 f.write("=\n")
-    
+
 class Primer3ProbeOutput:
-    
-    def __init__(self, probe_groups: Dict[str, Dict[str, ProbeGroup]] = None):
-        self.probe_groups = probe_groups if probe_groups else {}
+
+    # TODO : Write a function or class to parse primer3 output files. 
+
+    def __init__(self, records : List[Dict] = None):
+
+        self.records = records if records else []
     
     @classmethod
-    def from_primer_file(cls, filepath: str, expected_chromosome_count: int = 3):
+    def from_primer_file(cls, filepath):
         with open(filepath, "r") as f:
             data = f.read().split("=\n")
-            
-        segments = {}
-        
-        for record in data:
-            if not record.strip():
-                continue
-
-            lines = record.strip().split("\n")
-            record_dict = {}
-            for line in lines:
-                if "," in line:
-                    key, value = line.split(",", 1)
-                elif "=" in line:
-                    key, value = line.split("=", 1)
-                else:
+            for record in data:
+                if not record.strip():
                     continue
-                record_dict[key] = value.strip()
-            
-            seq_id = record_dict.get("SEQUENCE_ID")
-            if not seq_id:
-                continue
-            
-            parts = seq_id.split("-")
-            variant_part = parts[-1]
-            segment_id = "-".join(parts[:-1]) # Top-level group ID
 
-            # THIS is where normal and _rev get the same base name
-            if variant_part.endswith("_rev"):
-                base_variant = variant_part[:-4]
-            else:
-                base_variant = variant_part
-            
-            num = int(record_dict.get("PRIMER_INTERNAL_NUM_RETURNED", 0))
-            probes = []
-            for i in range(num):
-                p = record_dict.get(f"PRIMER_INTERNAL_{i}_SEQUENCE")
-                if p:
-                    probes.append(p)
-            
-            template = record_dict.get("SEQUENCE_TEMPLATE", "")
-            
-            if segment_id not in segments:
-                segments[segment_id] = {}
-            
-            segments[segment_id][seq_id] = {
-                "probes": probes,
-                "template": template,
-                "base_variant": base_variant 
-            }
-        
-        final_groups = {}
-        
-        # Process Uniqueness and Group Hierarchically
-        for seg_id, group_data in segments.items():
-            
-            segment_results = {}
-            
-            for seq_id, info in group_data.items():
-                my_variant = info["base_variant"]
-                my_probes = info["probes"]
-                unique = []
+                lines = record.strip().split("\n")
+                record_dict = {}
+                for line in lines:
+                    key, value = line.split(",", 1) if "," in line else line.split("=", 1)
+                    record_dict[key] = value
                 
-                # Check uniqueness against other variants
-                for probe in my_probes:
-                    is_unique = True
-                    for _, other_info in group_data.items():
-                        if other_info["base_variant"] == my_variant:
-                            continue
-                        if probe in other_info["template"]:
-                            is_unique = False
-                            break
-            
-                    if is_unique:
-                        unique.append(probe)
+                num = record_dict.get("PRIMER_INTERNAL_NUM_RETURNED")
+
+                buf = []
+                for i in range(int(num)):
+
+                    buf.append(record_dict.get(f"PRINER_INTERNAL_{i}_SEQUENCE"))
                 
-                # THIS is where normal and _rev probes are merged into the same group
-                if my_variant not in segment_results:
-                    segment_results[my_variant] = ProbeGroup(unique.copy(), info["template"])
+                key = "-".join(record_dict.get("SEQUENCE_ID").split("-")[:-1])
+                print(key)
+                if key not in seqset:
+                    
+                    seqset[key] = ProbeGroup()
+                    
                 else:
-                    segment_results[my_variant].probes.extend(unique)
-                    if not seq_id.endswith("_rev"):
-                        segment_results[my_variant].seq = info["template"]
+                    
+                    if "_rev" in record_dict.get("SEQUENCE_ID"):
+                        
 
-            # Clean up duplicates and empty groups for this segment
-            cleaned_segment_results = {}
-            for variant, probe_group in segment_results.items():
-                unique_probes = list(set(probe_group.probes))
-                
-                if unique_probes:
-                    probe_group.probes = unique_probes
-                    cleaned_segment_results[variant] = probe_group
+                        
 
-            # If any element in cleaned dict has less probe groups than we expect (We want probes for all of the genomes/chromosomes given.), throw it to trash.
-            if len(cleaned_segment_results) >= expected_chromosome_count:
-                final_groups[seg_id] = cleaned_segment_results
+                    else:
 
-        return cls(final_groups)
+
+
 
 class Primer3Input:
                 
@@ -278,7 +220,7 @@ class Primer3Output:
                 _id, _forward, _reverse = line.replace("\n","").split("\t")
 
                 forward = Primer(_forward)
-                reverse = Primer(_reverse)
+                firreverse = Primer(_reverse)
 
                 primer_pairs.append(PrimerPair(_id, 
                                                forward, 

@@ -23,6 +23,8 @@ class PrimerPair:
     forward : Primer
     reverse : Primer
     amplicon : Sequence = Sequence("", "")
+    # This will be used for probe design.
+    product_size : int = 0
 
 @dataclass
 class ProbeGroup:
@@ -100,14 +102,14 @@ class Primer3ProbeInput:
                 for key,value in record.items():
                     f.write(f"{key}={value}\n")
                 f.write("=\n")
-    
+
 class Primer3ProbeOutput:
-    
-    def __init__(self, probe_groups: Dict[str, Dict[str, ProbeGroup]] = None):
+
+    def __init__(self, probe_groups: Dict[str, ProbeGroup] = None):
         self.probe_groups = probe_groups if probe_groups else {}
     
     @classmethod
-    def from_primer_file(cls, filepath: str, expected_chromosome_count: int = 3):
+    def from_primer_file(cls, filepath):
         with open(filepath, "r") as f:
             data = f.read().split("=\n")
             
@@ -132,11 +134,12 @@ class Primer3ProbeOutput:
             if not seq_id:
                 continue
             
+            # Extract segment ID and variant info
+            # Format: seg_0-chr13-18889414-18897833-106/291-chr13[_rev]
             parts = seq_id.split("-")
             variant_part = parts[-1]
-            segment_id = "-".join(parts[:-1]) # Top-level group ID
+            segment_id = "-".join(parts[:-1])
 
-            # THIS is where normal and _rev get the same base name
             if variant_part.endswith("_rev"):
                 base_variant = variant_part[:-4]
             else:
@@ -157,27 +160,27 @@ class Primer3ProbeOutput:
             segments[segment_id][seq_id] = {
                 "probes": probes,
                 "template": template,
-                "base_variant": base_variant 
+                "base_variant": base_variant
             }
         
         final_groups = {}
         
-        # Process Uniqueness and Group Hierarchically
         for seg_id, group_data in segments.items():
-            
-            segment_results = {}
-            
             for seq_id, info in group_data.items():
                 my_variant = info["base_variant"]
                 my_probes = info["probes"]
                 unique = []
                 
-                # Check uniqueness against other variants
                 for probe in my_probes:
                     is_unique = True
-                    for _, other_info in group_data.items():
-                        if other_info["base_variant"] == my_variant:
+                    for other_seq_id, other_info in group_data.items():
+                        if seq_id == other_seq_id:
                             continue
+                        
+                        # Compare variants. 
+                        # We want uniqueness against DIFFERENT variants (e.g. chr13 vs chr18).
+                        # We do NOT require uniqueness against the same variant's other strand (chr13 vs chr13_rev).
+                        #if other_info["base_variant"] != my_variant:
                         if probe in other_info["template"]:
                             is_unique = False
                             break
@@ -185,28 +188,10 @@ class Primer3ProbeOutput:
                     if is_unique:
                         unique.append(probe)
                 
-                # THIS is where normal and _rev probes are merged into the same group
-                if my_variant not in segment_results:
-                    segment_results[my_variant] = ProbeGroup(unique.copy(), info["template"])
-                else:
-                    segment_results[my_variant].probes.extend(unique)
-                    if not seq_id.endswith("_rev"):
-                        segment_results[my_variant].seq = info["template"]
-
-            # Clean up duplicates and empty groups for this segment
-            cleaned_segment_results = {}
-            for variant, probe_group in segment_results.items():
-                unique_probes = list(set(probe_group.probes))
+                final_groups[seq_id] = ProbeGroup(unique, info["template"])
                 
-                if unique_probes:
-                    probe_group.probes = unique_probes
-                    cleaned_segment_results[variant] = probe_group
-
-            # If any element in cleaned dict has less probe groups than we expect (We want probes for all of the genomes/chromosomes given.), throw it to trash.
-            if len(cleaned_segment_results) >= expected_chromosome_count:
-                final_groups[seg_id] = cleaned_segment_results
-
         return cls(final_groups)
+
 
 class Primer3Input:
                 

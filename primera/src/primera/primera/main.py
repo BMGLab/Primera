@@ -6,19 +6,20 @@ from .Records.pslParser import PslRecord
 from .Records.bedParser import BedRecord
 
 from .Utils.results import Result
-from .Utils.result_to_bed import writeToBed
+from .Utils.result_to_bed import ampToBed
+from .Utils.seg_to_bed import segToBed
 from .Utils.filter_coords import filterCoords
 
 import argparse
 
-def filter_psl(psl, genomes, tbitFile, threshold, fillspaces = False):
+def filter_psl(psl, genomes, tbitFile, threshold, fillspaces = False, filter_segs=False):
  
     psl_record = PslRecord.from_file(psl)
 
-    filtered_record = psl_record.filter_by_target(genomes)
+    filtered_record = psl_record.filter_by_target(genomes, filter_segs)
 
     if fillspaces:
-        filtered_record.fill_spaces(threshold)
+        filtered_record.fill_spaces(threshold, filter_segments=filter_segs)
 
     segments = filtered_record.extract_groups(tbitFile, reverse_complement=False)
 
@@ -46,7 +47,7 @@ def filter_bed(bed, genomes, outfile, threshold, filterlocation=True):
 
     filtered_bed.to_file(outfile)
 
-def prepare_primers(segmentFiles, minSize, maxSize, primerCount):
+def prepare_primers(segmentFiles, minSize, maxSize, primerCount, min_tm, opt_tm, max_tm):
     
     for seg in segmentFiles:
         
@@ -54,7 +55,10 @@ def prepare_primers(segmentFiles, minSize, maxSize, primerCount):
         newInput = Primer3Input.from_fasta(record, 
                                            primerCount, 
                                            minSize, 
-                                           maxSize)
+                                           maxSize,
+                                           min_tm,
+                                           opt_tm,
+                                           max_tm)
 
         newInput.to_file(f"{seg}_primers")
 
@@ -76,8 +80,11 @@ def write_results(bedfile, matchedfile, outfile):
     newResult = Result.from_file(bedfile,matchedfile)
     newResult.to_file(outfile)
 
-def to_bed(filepath, outfile):
-    writeToBed(filepath, outfile)
+def amp_to_bed(filepath, outfile):
+    ampToBed(filepath, outfile)
+
+def seg_to_bed(filepath, outfile):
+    segToBed(filepath, outfile)
 
 def main():
 
@@ -85,18 +92,25 @@ def main():
     The main function. Holds the parsers and runs all of the necessary functions. The default
     values like threshold for filtering nearby primers etc. are also stored in the ArgumentParser object.
     """
-   
+  
+  ################# DEFAULT VALUES #################################################################
+
     # Default values for some prepare_primers args.
     _DEFAULT_MIN_AMPLICON_SIZE = 150
     _DEFAULT_MAX_AMPLICON_SIZE = 300
     _DEFAULT_NUM_PRIMERS = 0
+    _DEFAULT_MIN_TM = 59.0
+    _DEFAULT_OPT_TM = 60.0
+    _DEFAULT_MAX_TM = 61.0
     
     # Default values for some filter_bed args.
     _DEFAULT_FILTERING_THRESHOLD = 18
 
     # Default values for some filter_psl args. 
     _DEFAULT_FILL_SPACES_THRESHOLD = 400
-    
+
+   ################################################################################################## 
+
     parser = argparse.ArgumentParser(description="Primera command-line tool")
     
     subparsers = parser.add_subparsers(dest="command")
@@ -108,7 +122,8 @@ def main():
     filter_parser.add_argument("-g","--genomes", required=True ,help="Comma-seperated list of target genomes.")
     filter_parser.add_argument("-t","--tbitFile", required=True, help="Path to the .2bit file.")
     filter_parser.add_argument("-f", "--fill-spaces", action="store_true", help="Merge nearby segments")
-    filter_parser.add_argument ("--threshold", default=_DEFAULT_FILL_SPACES_THRESHOLD, help="The threshold for fill_spaces.")
+    filter_parser.add_argument ("--threshold", default=_DEFAULT_FILL_SPACES_THRESHOLD, help=f"The threshold for fill_spaces. Default : {_DEFAULT_FILL_SPACES_THRESHOLD}")
+    filter_parser.add_argument("--filter-segments", action="store_true", help="Filter duplicate segments.")
     #TODO : Change this help str.
     
     ############# primera filter_bed ##############################################################
@@ -117,8 +132,8 @@ def main():
     filter_bed_parser.add_argument("-g", "--genomes", required=True, help="Comma-seperated list of target genomes")
     filter_bed_parser.add_argument("-b", "--bedfile", required=True, help="Path to the BED file.")
     filter_bed_parser.add_argument("-f", "--filter-locations", action="store_true", help="Filter nearby primer pairs for all of the genomes provided.")
-    filter_bed_parser.add_argument("-t","--threshold",default=_DEFAULT_FILTERING_THRESHOLD,help="""The minimum space allowed between two generated primers. 
-                                   The rest will be filtered out. Default=18""")
+    filter_bed_parser.add_argument("-t","--threshold",default=_DEFAULT_FILTERING_THRESHOLD,help=f"""The minimum space allowed between two generated primers. 
+                                   The rest will be filtered out. Default={_DEFAULT_FILTERING_THRESHOLD}""")
     filter_bed_parser.add_argument("-o", "--outfile", required=True, help="The output file path.")
 
     ############### primera prepare_primers ############################################################
@@ -135,9 +150,12 @@ def main():
     prepare_primers_parser.add_argument("-f", "--files", nargs="+", required=True, help="Path to the segment files.")
     prepare_primers_parser.add_argument("--num-primers", default=_DEFAULT_NUM_PRIMERS, help="""Static primer count for all of the segments. 
                                         If not provided, the tool will try to calculate a 'sufficient' number of primers to generate.""")
-    prepare_primers_parser.add_argument("--min-size", default=_DEFAULT_MIN_AMPLICON_SIZE, help="Minimum amplicon size. Default=150")
-    prepare_primers_parser.add_argument("--max-size", default=_DEFAULT_MAX_AMPLICON_SIZE, help="Maximum amplicon size. Default=300")
+    prepare_primers_parser.add_argument("--min-size", default=_DEFAULT_MIN_AMPLICON_SIZE, help=f"Minimum amplicon size. Default : {_DEFAULT_MIN_AMPLICON_SIZE}")
+    prepare_primers_parser.add_argument("--max-size", default=_DEFAULT_MAX_AMPLICON_SIZE, help=f"Maximum amplicon size. Default : {_DEFAULT_MAX_AMPLICON_SIZE}")
 
+    prepare_primers_parser.add_argument("--min-tm", default=_DEFAULT_MIN_TM, help=f"Minimum Tm for primers. Default : {_DEFAULT_MIN_TM} Degrees Celcius")
+    prepare_primers_parser.add_argument("--opt-tm", default=_DEFAULT_MIN_TM, help=f"Optimum Tm for primers. Default : {_DEFAULT_OPT_TM} Degrees Celcius")
+    prepare_primers_parser.add_argument("--max-tm", default=_DEFAULT_MIN_TM, help=f"Max Tm for primers. Default : {_DEFAULT_MAX_TM} Degrees Celcius")
     ############### primera match_primers #################################################################
     
     match_primers_parser= subparsers.add_parser("match_primers", help="Convert Primer3 output to isPcr input files.")
@@ -145,19 +163,27 @@ def main():
     match_primers_parser.add_argument("-f","--files", nargs="+", required=True, help="File path for primer3 output files.")
     match_primers_parser.add_argument("--from-matched", action="store_true", help="Use if you want to parse a matched file.")
 
- ################## primera write_results #####################################################################
+    ################## primera write_results #####################################################################
     
     write_results_parser = subparsers.add_parser("write_results", help="Write results.")
 
     write_results_parser.add_argument("-b","--bedfile", required=True, help="Path to the BED file.")
     write_results_parser.add_argument("-m","--matchedfile", required=True, help="Path to the matched file generated by primera match_primers.")
     write_results_parser.add_argument("-o", "--outfile", required=True, help="Path to the output file.")
-    ################# primera to_bed ###########################################################################
+    ################# primera amp_to_bed ###########################################################################
 
-    to_bed_parser = subparsers.add_parser("to_bed", help= "Return results in a BED format.")
+    to_bed_parser = subparsers.add_parser("amp_to_bed", help= "Return results in a BED format.")
 
     to_bed_parser.add_argument("-f","--file", required=True, help="Path to the result file.")
     to_bed_parser.add_argument("-o","--outfile", required=True, help="Output file name.")
+
+    ################# primera seg_to_bed ###########################################
+    
+    to_bed_parser = subparsers.add_parser("seg_to_bed", help= "Return results in a BED format.")
+
+    to_bed_parser.add_argument("-f","--file", required=True, help="Path to the result file.")
+    to_bed_parser.add_argument("-o","--outfile", required=True, help="Output file name.")
+
     ############## primera filter_coords #####################################################################
 
     filter_coords_parser = subparsers.add_parser("filter_coords", help="Filter NUCMER's .coords file.")
@@ -173,7 +199,7 @@ def main():
 
             genomes = [c.strip() for c in args.genomes.split(",")]
 
-            filter_psl(args.psl, genomes, args.tbitFile, args.threshold,args.fill_spaces)
+            filter_psl(args.psl, genomes, args.tbitFile, args.threshold,args.fill_spaces,args.filter_segments)
 
         case "filter_bed":
 
@@ -185,7 +211,7 @@ def main():
 
         case "prepare_primers":
 
-            prepare_primers(args.files, args.min_size, args.max_size, args.num_primers)
+            prepare_primers(args.files, args.min_size, args.max_size, args.num_primers, args.min_tm, args.opt_tm, args.max_tm)
 
         case "match_primers":
 
@@ -195,9 +221,14 @@ def main():
 
             write_results(args.bedfile, args.matchedfile, args.outfile)
         
-        case "to_bed":
+        case "amp_to_bed":
             
-            to_bed(args.file, args.outfile)
+            amp_to_bed(args.file, args.outfile)
+
+        case "seg_to_bed":
+            
+            seg_to_bed(args.file, args.outfile)
+
 
         case "filter_coords":
             

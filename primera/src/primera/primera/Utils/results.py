@@ -50,14 +50,12 @@ class Result:
                 segment = FastaRecord.from_file(f"{segments_path}/{name}_reversed.fa")
                 
                 for seq in segment.sequences:
-                    print(seq.id)
                     segDict[seq.id.split("-")[1]] = seq.id.split("-")[2:]
  
                 segstarts = ""
                 segends = ""
 
                 for genome in chrs.split(","):
-                    print(segDict[genome])
                     segstarts += f"{segDict[genome][0]},"
                     segends += f"{segDict[genome][1]},"
 
